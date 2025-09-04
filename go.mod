@@ -1,4 +1,4 @@
-module YaBase
+module github.com/3086953492/YaBase
 
 go 1.23.4
 
