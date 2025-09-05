@@ -1,8 +1,8 @@
 package response
 
 import (
-	apperrors "github.com/3086953492/YaBase/errors"
 	"errors"
+	apperrors "github.com/3086953492/YaBase/errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -52,10 +52,11 @@ func Paginated(c *gin.Context, data any, total int64, page, pageSize int) {
 		Success: true,
 		Message: "获取成功",
 		Data: gin.H{
-			"list":      data,
-			"total":     total,
-			"page":      page,
-			"page_size": pageSize,
+			"items":       data,
+			"total":       total,
+			"page":        page,
+			"page_size":   pageSize,
+			"total_pages": total / int64(pageSize),
 		},
 	})
 }
