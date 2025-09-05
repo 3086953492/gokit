@@ -1,4 +1,4 @@
-package configs
+package types
 
 type RedisConfig struct {
 	Host     string `mapstructure:"host"`

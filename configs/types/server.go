@@ -1,4 +1,4 @@
-package configs
+package types
 
 type ServerConfig struct {
 	Port int    `mapstructure:"port"`

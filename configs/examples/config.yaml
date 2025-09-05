@@ -1,0 +1,72 @@
+server:
+  port: 8080
+  mode: debug
+  id: 1
+Database:
+  host: localhost
+  port: 3306
+  user: root
+  password: 123456
+  dbname: yaccount
+  charset: utf8mb4
+  parseTime: true
+  loc: Local
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+
+jwt:
+  secret: "examplekey"
+  expire: 1h
+
+log:
+  level: info
+  filename: logs/example.log
+  max_size: 10
+  max_backups: 3
+  max_age: 7
+  compress: true
+  rotate_daily: true
+  console: true
+  logs_dir: logs
+
+middleware:
+  jwt:
+    secret: "examplekey"
+    expire: 1h
+    skip_paths:
+      - /api/account/v1/auth/login
+      - /api/account/v1/auth/register
+  cors:
+    allow_origins:
+      - "*"
+    allow_methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - OPTIONS
+    allow_headers:
+      - Authorization
+
+oauth:
+  issuer: http://localhost:8080
+  authorize_ui: http://localhost:5173/oauth/authorize
+  authorization_code_ttl: 10m
+  access_token_ttl: 1h
+  refresh_token_ttl: 168h
+  supported_grant_types:
+    - authorization_code
+    - refresh_token
+    - client_credentials
+  supported_response_types:
+    - code
+  default_scopes:
+    - read
+  require_pkce: false
+  supported_challenge_methods:
+    - S256
+    - plain

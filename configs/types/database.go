@@ -1,4 +1,4 @@
-package configs
+package types
 
 type DatabaseConfig struct {
 	Host      string `mapstructure:"host"`

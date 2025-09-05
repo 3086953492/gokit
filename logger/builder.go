@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/3086953492/YaBase/configs"
+	"github.com/3086953492/YaBase/configs/types"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -13,18 +13,18 @@ import (
 
 // Builder logger构建器
 type Builder struct {
-    config configs.LogConfig
+    config types.LogConfig
 }
 
 // NewBuilder 创建新的构建器
 func NewBuilder() *Builder {
     return &Builder{
-        config: configs.DefaultConfig(),
+        config: types.DefaultConfig(),
     }
 }
 
 // WithConfig 设置完整配置
-func (b *Builder) WithConfig(config configs.LogConfig) *Builder {
+func (b *Builder) WithConfig(config types.LogConfig) *Builder {
     b.config = config
     return b
 }

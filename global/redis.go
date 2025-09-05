@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/3086953492/YaBase/configs"
+	"github.com/3086953492/YaBase/configs/types"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -31,7 +31,7 @@ func IsRedisInitialized() bool {
 }
 
 // InitRedisWithConfig 使用配置初始化全局Redis客户端
-func InitRedisWithConfig(cfg configs.RedisConfig) error {
+func InitRedisWithConfig(cfg types.RedisConfig) error {
 	// 创建Redis客户端
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
