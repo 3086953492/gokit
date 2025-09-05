@@ -35,7 +35,8 @@ func IsConfigInitialized() bool {
 
 // InitConfig 初始化全局配置
 // 只需要在main函数调用一次，后续配置变更会自动更新全局配置
-func InitConfig(cfg *configs.Config) error {
+func InitConfig() error {
+	cfg := &configs.Config{}
 	err := LoadConfig(cfg, func(newCfg *configs.Config) {
 		// 配置变更时自动更新全局配置
 		globalMutex.Lock()
