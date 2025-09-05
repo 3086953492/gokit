@@ -1,10 +1,9 @@
+// yabase/logger/logger.go
 package logger
 
 import (
-	"sync"
-	"time"
-
 	"go.uber.org/zap"
+	"sync"
 )
 
 var (
@@ -21,7 +20,8 @@ type Logger struct {
 // Default 获取默认logger实例
 func Default() *Logger {
 	once.Do(func() {
-		zapLogger, _ := zap.NewProduction()
+		// 使用快速初始化创建默认logger
+		zapLogger, _ := NewBuilder().Build()
 		defaultLogger = &Logger{zap: zapLogger}
 	})
 	return defaultLogger
@@ -84,16 +84,4 @@ func Error(msg string, fields ...zap.Field) {
 
 func GetLogger() *zap.Logger {
 	return Default().GetLogger()
-}
-
-func LogError(funcName, operation, message string, err error, fields ...zap.Field) {
-	baseFields := []zap.Field{
-		zap.String("function", funcName),
-		zap.String("operation", operation),
-		zap.Time("timestamp", time.Now()),
-		zap.Error(err),
-	}
-
-	allFields := append(baseFields, fields...)
-	Error(message, allFields...)
 }
