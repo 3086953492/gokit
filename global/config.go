@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/3086953492/YaBase/configs"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -13,28 +14,16 @@ import (
 
 // 全局配置管理器
 var (
-	globalConfig  any
+	globalConfig  *configs.Config
 	globalMutex   sync.RWMutex
 	isInitialized bool
 )
 
 // GetGlobalConfig 获取全局配置
-func GetGlobalConfig() any {
+func GetGlobalConfig() *configs.Config {
 	globalMutex.RLock()
 	defer globalMutex.RUnlock()
 	return globalConfig
-}
-
-// GetConfig 获取类型安全的全局配置
-func GetConfig[T any]() *T {
-	globalMutex.RLock()
-	defer globalMutex.RUnlock()
-	if globalConfig != nil {
-		if config, ok := globalConfig.(*T); ok {
-			return config
-		}
-	}
-	return nil
 }
 
 // IsConfigInitialized 检查配置是否已初始化
@@ -46,8 +35,8 @@ func IsConfigInitialized() bool {
 
 // InitConfig 初始化全局配置
 // 只需要在main函数调用一次，后续配置变更会自动更新全局配置
-func InitConfig(cfg any) error {
-	err := LoadConfig(cfg, func(newCfg any) {
+func InitConfig(cfg *configs.Config) error {
+	err := LoadConfig(cfg, func(newCfg *configs.Config) {
 		// 配置变更时自动更新全局配置
 		globalMutex.Lock()
 		globalConfig = newCfg
@@ -68,7 +57,7 @@ func InitConfig(cfg any) error {
 // LoadConfig 通用配置加载函数
 // cfg: 配置结构指针，会被自动填充
 // onReload: 可选的重载回调函数
-func LoadConfig(cfg any, onReload ...func(any)) error {
+func LoadConfig(cfg *configs.Config, onReload ...func(*configs.Config)) error {
 	// 处理命令行参数
 	var config string
 	flag.StringVar(&config, "c", "", "指定配置文件路径")
