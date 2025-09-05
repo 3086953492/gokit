@@ -29,9 +29,9 @@ func IsCacheInitialized() bool {
 	return cacheInitialized
 }
 
-// InitCacheWithConfig 使用配置初始化全局缓存
+// InitCache 使用redis初始化全局缓存
 // 注意：需要先初始化Redis模块，然后再调用此函数
-func InitCacheWithConfig() error {
+func InitCache() error {
 
 	// 获取Redis客户端
 	redisClient := GetGlobalRedis()
