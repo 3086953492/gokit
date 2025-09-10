@@ -23,10 +23,9 @@ func GetGlobalDB() *gorm.DB {
 	return globalDB
 }
 
-// InitDBWithConfig 使用配置和dialector初始化数据库连接
+// InitDBWithDialector 使用dialector初始化数据库连接
 // dialector: 数据库方言，如mysql.Open(dsn)、postgres.Open(dsn)等
-// cfg: 数据库配置，用于日志记录
-func InitDBWithConfig(dialector gorm.Dialector, cfg types.DatabaseConfig) error {
+func InitDBWithDialector(dialector gorm.Dialector) error {
 	config := &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	}
@@ -94,4 +93,18 @@ func CloseDB() error {
 
 	}
 	return nil
+}
+
+// BuildMySQLDSN 构建MySQL DSN
+func BuildMySQLDSN(cfg types.DatabaseConfig) string {
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",
+		cfg.User,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.DBName,
+		cfg.Charset,
+		cfg.ParseTime,
+		cfg.Loc,
+	)
 }
