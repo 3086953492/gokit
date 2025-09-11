@@ -1,10 +1,11 @@
-package global
+package cache
 
 import (
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/3086953492/YaBase/redis"
 	"github.com/go-redis/cache/v9"
 )
 
@@ -34,7 +35,7 @@ func IsCacheInitialized() bool {
 func InitCache() error {
 
 	// 获取Redis客户端
-	redisClient := GetGlobalRedis()
+	redisClient := redis.GetGlobalRedis()
 	if redisClient == nil {
 		return fmt.Errorf("redis客户端未初始化")
 	}
