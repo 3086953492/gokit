@@ -1,64 +1,19 @@
-package global
+package config
 
 import (
 	"flag"
 	"fmt"
 	"os"
-	"sync"
 
-	"github.com/3086953492/YaBase/configs"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
 
-// 全局配置管理器
-var (
-	globalConfig  *configs.Config
-	globalMutex   sync.RWMutex
-	isInitialized bool
-)
-
-// GetGlobalConfig 获取全局配置
-func GetGlobalConfig() *configs.Config {
-	globalMutex.RLock()
-	defer globalMutex.RUnlock()
-	return globalConfig
-}
-
-// IsConfigInitialized 检查配置是否已初始化
-func IsConfigInitialized() bool {
-	globalMutex.RLock()
-	defer globalMutex.RUnlock()
-	return isInitialized
-}
-
-// InitConfig 初始化全局配置
-// 只需要在main函数调用一次，后续配置变更会自动更新全局配置
-func InitConfig() error {
-	cfg := &configs.Config{}
-	err := LoadConfig(cfg, func(newCfg *configs.Config) {
-		// 配置变更时自动更新全局配置
-		globalMutex.Lock()
-		globalConfig = newCfg
-		globalMutex.Unlock()
-	})
-
-	if err == nil {
-		// 初始化时设置全局配置
-		globalMutex.Lock()
-		globalConfig = cfg
-		isInitialized = true
-		globalMutex.Unlock()
-	}
-
-	return err
-}
-
 // LoadConfig 通用配置加载函数
 // cfg: 配置结构指针，会被自动填充
 // onReload: 可选的重载回调函数
-func LoadConfig(cfg *configs.Config, onReload ...func(*configs.Config)) error {
+func LoadConfig(cfg *Config, onReload ...func(*Config)) error {
 	// 处理命令行参数
 	var config string
 	flag.StringVar(&config, "c", "", "指定配置文件路径")
@@ -96,19 +51,6 @@ func LoadConfig(cfg *configs.Config, onReload ...func(*configs.Config)) error {
 		}
 
 		// 监听配置文件变化
-		if len(onReload) > 0 && onReload[0] != nil {
-			viper.WatchConfig()
-			viper.OnConfigChange(func(in fsnotify.Event) {
-				fmt.Println("配置文件发生变更: ", in.Name)
-				err := viper.Unmarshal(cfg)
-				if err != nil {
-					fmt.Printf("配置文件重新加载失败: %v\n", err)
-				} else {
-					fmt.Println("配置文件已重新加载")
-					onReload[0](cfg)
-				}
-			})
-		}
 
 		err = viper.Unmarshal(cfg)
 		if err != nil {

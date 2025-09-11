@@ -2,7 +2,7 @@
 package logger
 
 import (
-	"github.com/3086953492/YaBase/configs/types"
+	"github.com/3086953492/YaBase/config/types"
 )
 
 // InitWithConfig 使用配置初始化logger并设置为默认logger

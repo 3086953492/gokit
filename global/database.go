@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/3086953492/YaBase/configs/types"
+	"github.com/3086953492/YaBase/config/types"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )

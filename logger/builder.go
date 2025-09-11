@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/3086953492/YaBase/configs/types"
+	"github.com/3086953492/YaBase/config/types"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"

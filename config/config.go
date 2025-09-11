@@ -1,6 +1,6 @@
-package configs
+package config
 
-import "github.com/3086953492/YaBase/configs/types"
+import "github.com/3086953492/YaBase/config/types"
 
 type Config struct {
 	Server     types.ServerConfig     `mapstructure:"server"`
