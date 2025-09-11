@@ -4,100 +4,116 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
 
+const (
+	ConfigEnvVar = "CONFIG"
+)
+
+var (
+	// 支持的配置文件格式
+	supportedFormats = []string{"yaml", "json"}
+
+	// Gin模式对应的配置文件名
+	modeConfigMap = map[string]string{
+		gin.DebugMode:   "config.yaml",
+		gin.TestMode:    "config.test.yaml",
+		gin.ReleaseMode: "config.release.yaml",
+	}
+)
+
 // LoadConfig 通用配置加载函数
 // cfg: 配置结构指针，会被自动填充
+// configDir: 配置文件目录，如 "./configs"
 // onReload: 可选的重载回调函数
-func LoadConfig(cfg *Config, onReload ...func(*Config)) error {
+func LoadConfig(cfg *Config, configDir string, onReload ...func(*Config)) error {
+	configPath := determineConfigPath(configDir)
+
+	if err := loadConfigFile(configPath, configDir); err != nil {
+		return fmt.Errorf("配置文件读取失败: %v", err)
+	}
+
+	if err := viper.Unmarshal(cfg); err != nil {
+		return fmt.Errorf("配置解析失败: %v", err)
+	}
+
+	setupConfigWatch(cfg, onReload...)
+	fmt.Printf("成功读取配置文件: %s\n", viper.ConfigFileUsed())
+	return nil
+}
+
+// determineConfigPath 确定配置文件路径
+func determineConfigPath(configDir string) string {
 	// 处理命令行参数
 	var config string
 	flag.StringVar(&config, "c", "", "指定配置文件路径")
 	flag.Parse()
 
-	// 如果用户通过命令行或环境变量指定了配置文件，使用指定的配置文件
-	if config == "" {
-		if configEnv := os.Getenv("CONFIG"); configEnv != "" {
-			config = configEnv
-			fmt.Printf("您正在使用环境变量, 配置文件的路径为%s\n", configEnv)
-		} else if gin.Mode() != "" {
-			// 根据gin模式自动选择配置文件
-			switch gin.Mode() {
-			case gin.DebugMode:
-				config = "./configs/config.yaml"
-			case gin.TestMode:
-				config = "./configs/config.test.yaml"
-			case gin.ReleaseMode:
-				config = "./configs/config.release.yaml"
-			}
-			if config != "" {
-				fmt.Printf("您正在使用gin模式的%s环境名称, 配置文件的路径为%s\n", gin.Mode(), config)
-			}
-		}
-	} else {
-		fmt.Printf("您正在使用命令行的-c参数传递的值, 配置文件的路径为%s\n", config)
-	}
-
-	// 如果指定了配置文件，直接使用指定的配置文件
+	// 1. 命令行参数优先级最高
 	if config != "" {
-		viper.SetConfigFile(config)
-		err := viper.ReadInConfig()
-		if err != nil {
-			return fmt.Errorf("配置文件读取失败: %v", err)
-		}
-
-		// 监听配置文件变化
-
-		err = viper.Unmarshal(cfg)
-		if err != nil {
-			return fmt.Errorf("配置文件解析失败: %v", err)
-		}
-		fmt.Printf("成功读取配置文件: %s\n", config)
-		return nil
+		fmt.Printf("使用命令行参数指定的配置文件: %s\n", config)
+		return config
 	}
 
-	// 读取默认位置的配置文件
-	viper.AddConfigPath("./configs")
+	// 2. 环境变量次之
+	if configEnv := os.Getenv(ConfigEnvVar); configEnv != "" {
+		fmt.Printf("使用环境变量指定的配置文件: %s\n", configEnv)
+		return configEnv
+	}
 
-	// 优先读取YAML配置
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
+	// 3. 根据Gin模式自动选择
+	if gin.Mode() != "" {
+		if configFile, exists := modeConfigMap[gin.Mode()]; exists {
+			configPath := filepath.Join(configDir, configFile)
+			fmt.Printf("使用Gin模式(%s)对应的配置文件: %s\n", gin.Mode(), configPath)
+			return configPath
+		}
+	}
 
-	err := viper.ReadInConfig()
-	if err != nil {
-		// 如果YAML读取失败，尝试读取JSON配置
-		fmt.Printf("YAML配置读取失败，尝试读取JSON配置: %v\n", err)
+	// 4. 返回空字符串，使用默认配置目录
+	return ""
+}
 
+// loadConfigFile 加载配置文件
+func loadConfigFile(configPath, configDir string) error {
+	if configPath != "" {
+		// 使用指定的配置文件
+		viper.SetConfigFile(configPath)
+		return viper.ReadInConfig()
+	}
+
+	// 使用默认配置目录，尝试多种格式
+	return loadDefaultConfig(configDir)
+}
+
+// loadDefaultConfig 加载默认配置
+func loadDefaultConfig(configDir string) error {
+	viper.AddConfigPath(configDir)
+
+	for _, format := range supportedFormats {
 		viper.SetConfigName("config")
-		viper.SetConfigType("json")
+		viper.SetConfigType(format)
 
-		if err := viper.ReadInConfig(); err != nil {
-			return fmt.Errorf("配置文件读取失败，YAML和JSON配置都无法读取: %v", err)
+		if err := viper.ReadInConfig(); err == nil {
+			fmt.Printf("成功读取%s格式的配置文件\n", format)
+			return nil
 		}
-
-		fmt.Println("成功读取JSON配置文件")
-	} else {
-		fmt.Println("成功读取YAML配置文件")
 	}
 
-	// 为默认配置文件也启用监听功能
+	return fmt.Errorf("无法在目录 %s 中读取配置文件，支持的格式: %v", configDir, supportedFormats)
+}
+
+// setupConfigWatch 设置配置文件监听
+func setupConfigWatch(cfg *Config, onReload ...func(*Config)) {
 	if len(onReload) > 0 && onReload[0] != nil {
-		viper.WatchConfig()
-		viper.OnConfigChange(func(in fsnotify.Event) {
-			fmt.Println("配置文件发生变更: ", in.Name)
-			err := viper.Unmarshal(cfg)
-			if err != nil {
-				fmt.Printf("配置文件重新加载失败: %v\n", err)
-			} else {
-				fmt.Println("配置文件已重新加载")
-				onReload[0](cfg)
+		WatchConfig(cfg, func(newCfg any) {
+			if config, ok := newCfg.(*Config); ok {
+				onReload[0](config)
 			}
 		})
 	}
-
-	return viper.Unmarshal(cfg)
 }

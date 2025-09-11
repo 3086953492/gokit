@@ -24,10 +24,11 @@ func IsConfigInitialized() bool {
 }
 
 // InitConfig 初始化全局配置
+// configDir: 配置文件目录，如 "./configs"
 // 只需要在main函数调用一次，后续配置变更会自动更新全局配置
-func InitConfig() error {
+func InitConfig(configDir string) error {
 	cfg := &Config{}
-	err := LoadConfig(cfg, func(newCfg *Config) {
+	err := LoadConfig(cfg, configDir, func(newCfg *Config) {
 		// 配置变更时自动更新全局配置
 		globalMutex.Lock()
 		globalConfig = newCfg
