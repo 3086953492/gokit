@@ -5,7 +5,9 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func ValidateStruct(c *gin.Context, req any, v *validator.Validate) bool {
+type Validate = validator.Validate
+
+func ValidateStruct(c *gin.Context, req any, v *Validate) bool {
 	if err := c.ShouldBindJSON(req); err != nil {
 		return false
 	}
@@ -17,6 +19,6 @@ func ValidateStruct(c *gin.Context, req any, v *validator.Validate) bool {
 	return true
 }
 
-func ValidateStructOnly(req any, v *validator.Validate) error {
+func ValidateStructOnly(req any, v *Validate) error {
 	return v.Struct(req)
 }
