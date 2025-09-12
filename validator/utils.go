@@ -64,11 +64,8 @@ func ExtractValidatorMethods(pkg any) map[string]ValidatorFunc {
 	pkgValue := reflect.ValueOf(pkg)
 	pkgType := reflect.TypeOf(pkg)
 
-	// 处理指针类型
-	if pkgValue.Kind() == reflect.Ptr {
-		pkgValue = pkgValue.Elem()
-		pkgType = pkgType.Elem()
-	}
+	// 注意：不要转换指针类型为值类型，因为这会丢失指针接收者的方法
+	// 直接使用原始的pkgValue和pkgType来遍历方法
 
 	// 遍历所有方法
 	for i := 0; i < pkgValue.NumMethod(); i++ {
