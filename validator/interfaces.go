@@ -37,3 +37,5 @@ type PackageConfig struct {
 
 // TagTransformer 标签转换器
 type TagTransformer func(methodName string) string
+
+type FieldLevel = validator.FieldLevel

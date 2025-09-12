@@ -5,8 +5,6 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
-
-	"github.com/go-playground/validator/v10"
 )
 
 // CamelToSnake 驼峰命名转蛇形命名
@@ -46,7 +44,7 @@ func IsValidatorMethod(method reflect.Method) bool {
 	}
 
 	// 第二个参数必须是 validator.FieldLevel
-	if !methodType.In(1).Implements(reflect.TypeOf((*validator.FieldLevel)(nil)).Elem()) {
+	if !methodType.In(1).Implements(reflect.TypeOf((*FieldLevel)(nil)).Elem()) {
 		return false
 	}
 
@@ -80,7 +78,7 @@ func ExtractValidatorMethods(pkg any) map[string]ValidatorFunc {
 		if IsValidatorMethod(method) {
 			// 转换为 ValidatorFunc 类型
 			validatorFunc := func(mv reflect.Value) ValidatorFunc {
-				return func(fl validator.FieldLevel) bool {
+				return func(fl FieldLevel) bool {
 					results := mv.Call([]reflect.Value{reflect.ValueOf(fl)})
 					return results[0].Bool()
 				}
