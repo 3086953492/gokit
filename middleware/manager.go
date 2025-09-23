@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"github.com/3086953492/YaBase/middleware/oauth"
 	"github.com/3086953492/YaBase/middleware/scopes"
 	"github.com/3086953492/YaBase/middleware/security"
 	"github.com/3086953492/YaBase/config"
@@ -44,11 +43,6 @@ func (m *Manager) CORS() gin.HandlerFunc {
 		AllowMethods: m.config.CORS.AllowMethods,
 		AllowHeaders: m.config.CORS.AllowHeaders,
 	})
-}
-
-// 获取 OAuth 中间件
-func (m *Manager) OAuth(requiredScopes ...string) gin.HandlerFunc {
-	return oauth.OAuthTokenMiddleware(requiredScopes...)
 }
 
 func (m *Manager) RequiredScopes(scopeStrings ...string) gin.HandlerFunc {
