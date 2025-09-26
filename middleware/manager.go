@@ -1,11 +1,11 @@
 package middleware
 
 import (
-	"github.com/3086953492/YaBase/middleware/scopes"
-	"github.com/3086953492/YaBase/middleware/security"
 	"github.com/3086953492/YaBase/config"
 	"github.com/3086953492/YaBase/config/types"
-
+	"github.com/3086953492/YaBase/middleware/oauth"
+	"github.com/3086953492/YaBase/middleware/scopes"
+	"github.com/3086953492/YaBase/middleware/security"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,4 +47,8 @@ func (m *Manager) CORS() gin.HandlerFunc {
 
 func (m *Manager) RequiredScopes(scopeStrings ...string) gin.HandlerFunc {
 	return scopes.RequiredScopes(scopeStrings...)
+}
+
+func (m *Manager) OAuth(requiredScopes ...string) gin.HandlerFunc {
+	return oauth.OAuthTokenMiddleware(requiredScopes...)
 }
