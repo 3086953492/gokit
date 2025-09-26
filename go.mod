@@ -3,6 +3,7 @@ module github.com/3086953492/YaBase
 go 1.23.4
 
 require (
+	github.com/casdoor/casdoor-go-sdk v1.20.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-playground/validator/v10 v10.27.0
@@ -12,6 +13,13 @@ require (
 	go.uber.org/zap v1.27.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/gorm v1.30.5
+)
+
+require (
+	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
+	golang.org/x/oauth2 v0.13.0 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
 )
 
 require (
