@@ -1,4 +1,5 @@
 server:
+  base_url: http://localhost:8080
   port: 8080
   mode: debug
   id: 1
