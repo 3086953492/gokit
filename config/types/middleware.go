@@ -6,42 +6,15 @@ import "time"
 type MiddlewareConfig struct {
 	// JWT配置
 	JWT struct {
-		Secret    string        `yaml:"secret"`
-		Expire    time.Duration `yaml:"expire"`
-		SkipPaths []string      `yaml:"skip_paths"`
-	} `yaml:"jwt"`
+		Secret    string        `json:"secret" yaml:"secret" mapstructure:"secret"`
+		Expire    time.Duration `json:"expire" yaml:"expire" mapstructure:"expire"`
+		SkipPaths []string      `json:"skip_paths" yaml:"skip_paths" mapstructure:"skip_paths"`
+	} `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
 
 	// CORS配置
 	CORS struct {
-		AllowOrigins []string `yaml:"allow_origins"`
-		AllowMethods []string `yaml:"allow_methods"`
-		AllowHeaders []string `yaml:"allow_headers"`
-	} `yaml:"cors"`
-}
-
-// 默认配置
-func DefaultMiddlewareConfig() *MiddlewareConfig {
-	return &MiddlewareConfig{
-		JWT: struct {
-			Secret    string        `yaml:"secret"`
-			Expire    time.Duration `yaml:"expire"`
-			SkipPaths []string      `yaml:"skip_paths"`
-		}{
-			Secret: "your-default-secret",
-			Expire: 24 * time.Hour,
-			SkipPaths: []string{
-				"/api/account/v1/auth/login",
-				"/api/account/v1/auth/register",
-			},
-		},
-		CORS: struct {
-			AllowOrigins []string `yaml:"allow_origins"`
-			AllowMethods []string `yaml:"allow_methods"`
-			AllowHeaders []string `yaml:"allow_headers"`
-		}{
-			AllowOrigins: []string{"*"},
-			AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowHeaders: []string{"Content-Type", "Authorization"},
-		},
-	}
+		AllowOrigins []string `json:"allow_origins" yaml:"allow_origins" mapstructure:"allow_origins"`
+		AllowMethods []string `json:"allow_methods" yaml:"allow_methods" mapstructure:"allow_methods"`
+		AllowHeaders []string `json:"allow_headers" yaml:"allow_headers" mapstructure:"allow_headers"`
+	} `json:"cors" yaml:"cors" mapstructure:"cors"`
 }

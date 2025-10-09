@@ -3,11 +3,11 @@ package config
 import "github.com/3086953492/YaBase/config/types"
 
 type Config struct {
-	Server     types.ServerConfig     `mapstructure:"server"`
-	Database   types.DatabaseConfig   `mapstructure:"database"`
-	Redis      types.RedisConfig      `mapstructure:"redis"`
-	JWT        types.JWTConfig        `mapstructure:"jwt"`
-	Log        types.LogConfig        `mapstructure:"log"`
-	Middleware types.MiddlewareConfig `mapstructure:"middleware"`
-	Casdoor    types.CasdoorConfig    `mapstructure:"casdoor"`
+	Server     types.ServerConfig     `json:"server" yaml:"server" mapstructure:"server"`
+	Database   types.DatabaseConfig   `json:"database" yaml:"database" mapstructure:"database"`
+	Redis      types.RedisConfig      `json:"redis" yaml:"redis" mapstructure:"redis"`
+	JWT        types.JWTConfig        `json:"jwt" yaml:"jwt" mapstructure:"jwt"`
+	Log        types.LogConfig        `json:"log" yaml:"log" mapstructure:"log"`
+	Middleware types.MiddlewareConfig `json:"middleware" yaml:"middleware" mapstructure:"middleware"`
+	Casdoor    types.CasdoorConfig    `json:"casdoor" yaml:"casdoor" mapstructure:"casdoor"`
 }
