@@ -64,9 +64,9 @@ func Paginated(c *gin.Context, data any, total int64, page, pageSize int) {
 // getHTTPStatus 将错误类型映射为HTTP状态码
 func getHTTPStatus(errorType string) int {
 	switch errorType {
-	case apperrors.TypeUnauthorized, apperrors.TypeTokenExpired, apperrors.TypeTokenInvalid:
+	case apperrors.TypeUnauthorized, apperrors.TypeOAuthTokenExpired, apperrors.TypeInvalidToken:
 		return http.StatusUnauthorized // 401
-	case apperrors.TypePermissionDenied:
+	case apperrors.TypeInsufficientScope:
 		return http.StatusForbidden // 403
 	case apperrors.TypeNotFound, apperrors.TypeUserNotFound:
 		return http.StatusNotFound // 404

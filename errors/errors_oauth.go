@@ -15,6 +15,7 @@ const (
 	TypeUpdateClientFailed      = "UPDATE_CLIENT_FAILED"
 	TypeDeleteClientFailed      = "DELETE_CLIENT_FAILED"
 	TypeInvalidCodeOrState      = "INVALID_CODE_OR_STATE"
+	TypeUnauthorized            = "UNAUTHORIZED"
 )
 
 var (
@@ -32,4 +33,5 @@ var (
 	ErrUpdateClientFailed      = New(TypeUpdateClientFailed, "更新客户端失败")
 	ErrDeleteClientFailed      = New(TypeDeleteClientFailed, "删除客户端失败")
 	ErrInvalidCodeOrState      = New(TypeInvalidCodeOrState, "授权码或状态无效")
+	ErrUnauthorized            = New(TypeUnauthorized, "未授权")
 )
