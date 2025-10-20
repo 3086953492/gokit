@@ -14,6 +14,7 @@ const (
 	TypeClientNotFound          = "CLIENT_NOT_FOUND"
 	TypeUpdateClientFailed      = "UPDATE_CLIENT_FAILED"
 	TypeDeleteClientFailed      = "DELETE_CLIENT_FAILED"
+	TypeInvalidCodeOrState      = "INVALID_CODE_OR_STATE"
 )
 
 var (
@@ -30,4 +31,5 @@ var (
 	ErrClientNotFound          = New(TypeClientNotFound, "客户端不存在")
 	ErrUpdateClientFailed      = New(TypeUpdateClientFailed, "更新客户端失败")
 	ErrDeleteClientFailed      = New(TypeDeleteClientFailed, "删除客户端失败")
+	ErrInvalidCodeOrState      = New(TypeInvalidCodeOrState, "授权码或状态无效")
 )
