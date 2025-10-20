@@ -1,6 +1,7 @@
 server:
   base_url: http://localhost:8080
   port: 8080
+  frontend_url: http://localhost:5173
   mode: debug
   id: 1
 database:
