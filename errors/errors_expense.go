@@ -1,6 +1,7 @@
 package errors
 
 const (
+	TypeExpenseCreateFailed     = "EXPENSE_CREATE_FAILED"
 	TypeExpenseNotFound         = "EXPENSE_NOT_FOUND"
 	TypeExpenseAlreadyApproved  = "EXPENSE_ALREADY_APPROVED"
 	TypeExpenseAlreadyRejected  = "EXPENSE_ALREADY_REJECTED"
@@ -18,6 +19,7 @@ const (
 )
 
 var (
+	ErrExpenseCreateFailed     = New(TypeExpenseCreateFailed, "报销单创建失败")
 	ErrExpenseNotFound         = New(TypeExpenseNotFound, "报销单不存在")
 	ErrExpenseAlreadyApproved  = New(TypeExpenseAlreadyApproved, "报销单已审批，无法修改")
 	ErrExpenseAlreadyRejected  = New(TypeExpenseAlreadyRejected, "报销单已被驳回")
