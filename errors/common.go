@@ -7,35 +7,24 @@ import (
 	"gorm.io/gorm"
 )
 
-// 通用错误类型常量
+// 错误类型常量
 const (
-	TypeNotFound       = "NOT_FOUND"
-	TypeDuplicateKey   = "DUPLICATE_KEY"
-	TypeDatabaseError  = "DATABASE_ERROR"
-	TypeInternalError  = "INTERNAL_ERROR"
-	TypeValidation     = "VALIDATION_ERROR"
-	TypeInvalidInput   = "INVALID_INPUT"
-	TypeAutoMigrate    = "AUTO_MIGRATE"
-	TypeServerInternal = "SERVER_INTERNAL"
+	TypeNotFound     = "NOT_FOUND"        // 404 - 记录不存在
+	TypeInvalidInput = "INVALID_INPUT"    // 400 - 输入参数错误
+	TypeUnauthorized = "UNAUTHORIZED"     // 401 - 未授权
+	TypeForbidden    = "FORBIDDEN"        // 403 - 权限不足
+	TypeDuplicate    = "DUPLICATE"        // 409 - 数据重复
+	TypeInternal     = "INTERNAL_ERROR"   // 500 - 内部错误
+	TypeDatabase     = "DATABASE_ERROR"   // 500 - 数据库错误
+	TypeValidation   = "VALIDATION_ERROR" // 422 - 验证失败
 )
 
-// 通用错误实例
-var (
-	ErrNotFound       = New(TypeNotFound, "记录不存在")
-	ErrDuplicateKey   = New(TypeDuplicateKey, "数据已存在")
-	ErrDatabaseError  = New(TypeDatabaseError, "数据库操作失败")
-	ErrInternalError  = New(TypeInternalError, "系统内部错误")
-	ErrValidation     = New(TypeValidation, "数据验证失败")
-	ErrInvalidInput   = New(TypeInvalidInput, "输入参数错误")
-	ErrAutoMigrate    = New(TypeAutoMigrate, "自动迁移失败")
-	ErrServerInternal = New(TypeServerInternal, "服务器内部错误")
-)
-
-// 错误类型检查函数
+// IsNotFoundError 检查是否为数据库未找到错误
 func IsNotFoundError(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
 }
 
+// IsDuplicateError 检查是否为重复键错误
 func IsDuplicateError(err error) bool {
 	if err == nil {
 		return false
@@ -46,19 +35,19 @@ func IsDuplicateError(err error) bool {
 		strings.Contains(errStr, "UNIQUE constraint failed")
 }
 
-// 数据库错误转换
+// FromDatabaseError 将数据库错误转换为 AppError
 func FromDatabaseError(err error) *AppError {
 	if err == nil {
 		return nil
 	}
 
 	if IsNotFoundError(err) {
-		return ErrNotFound
+		return NotFound().WithCause(err).Build()
 	}
 
 	if IsDuplicateError(err) {
-		return ErrDuplicateKey
+		return Duplicate().WithCause(err).Build()
 	}
 
-	return Wrap(err, TypeDatabaseError, "数据库操作失败")
+	return Database().WithCause(err).Build()
 }
