@@ -1,12 +1,13 @@
 package oauth
 
 import (
-	"encoding/json"
-	apperrors "github.com/3086953492/YaBase/errors"
-	"github.com/3086953492/YaBase/response"
+	"strings"
+
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"github.com/gin-gonic/gin"
-	"strings"
+
+	apperrors "github.com/3086953492/YaBase/errors"
+	"github.com/3086953492/YaBase/response"
 )
 
 // OAuth 访问令牌验证中间件
@@ -34,9 +35,8 @@ func OAuthTokenMiddleware(requiredScopes ...string) gin.HandlerFunc {
 			panic(err)
 		}
 
-		data, _ := json.Marshal(claims)
-		c.Set("user", data)
-
+		c.Set("user", claims.User)
+        
 		c.Next()
 	}
 }
