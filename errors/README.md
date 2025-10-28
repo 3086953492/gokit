@@ -26,17 +26,15 @@ type AppError struct {
 
 ## 快速开始
 
-### 1. 基础用法
+### 1. 基础用法（推荐使用简化 API）
 
 ```go
-// 简单创建错误
+// 使用简化 API，自动记录日志
 func GetUser(id uint) (*User, error) {
     var user User
     err := db.First(&user, id).Error
     if err != nil {
-        return nil, errors.NotFound().
-            WithMessage("用户不存在").
-            Build()
+        return nil, errors.NotFound().Msg("用户不存在").Log()
     }
     return &user, nil
 }
@@ -45,16 +43,15 @@ func GetUser(id uint) (*User, error) {
 ### 2. 添加上下文字段
 
 ```go
-// 添加调试信息
+// 链式添加多个字段，自动记录日志
 func GetUser(id uint) (*User, error) {
     var user User
     err := db.First(&user, id).Error
     if err != nil {
         return nil, errors.NotFound().
-            WithMessage("用户不存在").
-            WithField("user_id", id).
-            WithField("operation", "GetUser").
-            Build()
+            Msg("用户不存在").
+            Field("user_id", id).
+            Log()
     }
     return &user, nil
 }
@@ -63,37 +60,34 @@ func GetUser(id uint) (*User, error) {
 ### 3. 包装现有错误
 
 ```go
-// 保留原始错误信息
+// 包装原始错误并自动记录日志
 func GetUser(id uint) (*User, error) {
     var user User
     err := db.First(&user, id).Error
     if err != nil {
         return nil, errors.Database().
-            WithMessage("查询用户失败").
-            WithCause(err).
-            WithField("user_id", id).
-            Build()
+            Msg("查询用户失败").
+            Err(err).
+            Field("user_id", id).
+            Log()
     }
     return &user, nil
 }
 ```
 
-### 4. 批量添加字段
+### 4. 链式添加多个字段
 
 ```go
 func ProcessPayment(orderID string, amount float64, userID uint) error {
     err := payment.Charge(orderID, amount)
     if err != nil {
         return errors.Internal().
-            WithMessage("支付处理失败").
-            WithCause(err).
-            WithFields(map[string]interface{}{
-                "order_id": orderID,
-                "amount":   amount,
-                "user_id":  userID,
-                "timestamp": time.Now(),
-            }).
-            Build()
+            Msg("支付处理失败").
+            Err(err).
+            Field("order_id", orderID).
+            Field("amount", amount).
+            Field("user_id", userID).
+            Log()
     }
     return nil
 }
@@ -180,11 +174,11 @@ if errors.GetType(err) == errors.TypeNotFound {
 
 | 方法 | 说明 | 示例 |
 |------|------|------|
-| `WithMessage(msg string)` | 自定义错误消息 | `.WithMessage("用户不存在")` |
-| `WithCause(err error)` | 包装原始错误 | `.WithCause(dbErr)` |
-| `WithField(key, value)` | 添加单个上下文字段 | `.WithField("user_id", 123)` |
-| `WithFields(map[string]interface{})` | 批量添加字段 | `.WithFields(contextData)` |
-| `Build()` | 构建最终错误 | `.Build()` |
+| `Msg(msg string)` | 设置错误消息 | `.Msg("用户不存在")` |
+| `Err(err error)` | 包装原始错误 | `.Err(dbErr)` |
+| `Field(key, value)` | 添加单个上下文字段（可多次调用） | `.Field("user_id", 123)` |
+| `Log()` | 构建错误并自动记录日志 | `.Log()` |
+| `Build()` | 构建错误（不记录日志） | `.Build()` |
 
 ## 完整使用示例
 
@@ -197,28 +191,28 @@ func Login(username, password string) (*User, error) {
     if err != nil {
         if errors.IsNotFoundError(err) {
             return nil, errors.Unauthorized().
-                WithMessage("用户名或密码错误").
-                Build()
+                Msg("用户名或密码错误").
+                Log()
         }
         return nil, errors.Database().
-            WithMessage("查询用户失败").
-            WithCause(err).
-            Build()
+            Msg("查询用户失败").
+            Err(err).
+            Log()
     }
     
     if !checkPassword(password, user.Password) {
         return nil, errors.Unauthorized().
-            WithMessage("用户名或密码错误").
-            WithField("username", username).
-            Build()
+            Msg("用户名或密码错误").
+            Field("username", username).
+            Log()
     }
     
     if user.Status == "disabled" {
         return nil, errors.Forbidden().
-            WithMessage("账户已被禁用").
-            WithField("user_id", user.ID).
-            WithField("username", username).
-            Build()
+            Msg("账户已被禁用").
+            Field("user_id", user.ID).
+            Field("username", username).
+            Log()
     }
     
     return &user, nil
@@ -232,9 +226,9 @@ func CreateUser(req CreateUserRequest) (*User, error) {
     // 验证输入
     if req.Username == "" {
         return nil, errors.InvalidInput().
-            WithMessage("用户名不能为空").
-            WithField("field", "username").
-            Build()
+            Msg("用户名不能为空").
+            Field("field", "username").
+            Log()
     }
     
     // 检查用户名是否存在
@@ -242,15 +236,15 @@ func CreateUser(req CreateUserRequest) (*User, error) {
     err := db.Where("username = ?", req.Username).First(&existing).Error
     if err == nil {
         return nil, errors.Duplicate().
-            WithMessage("用户名已存在").
-            WithField("username", req.Username).
-            Build()
+            Msg("用户名已存在").
+            Field("username", req.Username).
+            Log()
     }
     if !errors.IsNotFoundError(err) {
         return nil, errors.Database().
-            WithMessage("检查用户名失败").
-            WithCause(err).
-            Build()
+            Msg("检查用户名失败").
+            Err(err).
+            Log()
     }
     
     // 创建用户
@@ -262,10 +256,10 @@ func CreateUser(req CreateUserRequest) (*User, error) {
     err = db.Create(user).Error
     if err != nil {
         return nil, errors.Database().
-            WithMessage("创建用户失败").
-            WithCause(err).
-            WithField("username", req.Username).
-            Build()
+            Msg("创建用户失败").
+            Err(err).
+            Field("username", req.Username).
+            Log()
     }
     
     return user, nil
@@ -281,27 +275,27 @@ func DeleteUser(operatorID, targetUserID uint) error {
     err := db.First(&operator, operatorID).Error
     if err != nil {
         return errors.NotFound().
-            WithMessage("操作者不存在").
-            WithField("operator_id", operatorID).
-            Build()
+            Msg("操作者不存在").
+            Field("operator_id", operatorID).
+            Log()
     }
     
     if operator.Role != "admin" {
         return errors.Forbidden().
-            WithMessage("只有管理员可以删除用户").
-            WithField("operator_id", operatorID).
-            WithField("operator_role", operator.Role).
-            Build()
+            Msg("只有管理员可以删除用户").
+            Field("operator_id", operatorID).
+            Field("operator_role", operator.Role).
+            Log()
     }
     
     // 执行删除
     err = db.Delete(&User{}, targetUserID).Error
     if err != nil {
         return errors.Database().
-            WithMessage("删除用户失败").
-            WithCause(err).
-            WithField("target_user_id", targetUserID).
-            Build()
+            Msg("删除用户失败").
+            Err(err).
+            Field("target_user_id", targetUserID).
+            Log()
     }
     
     return nil
@@ -382,10 +376,31 @@ func getHTTPStatusCode(errType string) int {
 
 ### 2. 日志记录
 
+**推荐方式：** 使用 `Log()` 方法自动记录日志
+
 ```go
-func LogError(err error) {
+// 错误会自动记录到日志，无需手动调用 logger
+func GetUser(id uint) (*User, error) {
+    var user User
+    err := db.First(&user, id).Error
+    if err != nil {
+        // Log() 会自动记录：函数名、操作类型、错误信息、上下文字段
+        return nil, errors.Database().
+            Msg("查询用户失败").
+            Err(err).
+            Field("user_id", id).
+            Log()
+    }
+    return &user, nil
+}
+```
+
+**特殊场景：** 需要自定义日志格式时，可使用 `Build()` 然后手动记录
+
+```go
+func CustomLogError(err error) {
     if appErr, ok := err.(*errors.AppError); ok {
-        // 结构化日志
+        // 自定义日志格式
         logger.Error("应用错误",
             zap.String("type", appErr.Type),
             zap.String("message", appErr.Message),
@@ -462,52 +477,42 @@ appErr := errors.FromDatabaseError(dbErr)
 // - 其他数据库错误 -> Database
 ```
 
-## 迁移指南
+## API 说明
 
-### 从旧 API 迁移
+### 核心方法
 
-#### 旧方式
+错误包提供了简洁的链式 API：
+
 ```go
-// 使用预定义错误
-return errors.ErrUserNotFound
-
-// 使用工厂函数
-return errors.NewUserNotFoundError(userID)
-
-// 创建新错误
-return errors.New("USER_NOT_FOUND", "用户不存在")
-
-// 包装错误
-return errors.Wrap(err, "DATABASE_ERROR", "数据库操作失败")
-```
-
-#### 新方式
-```go
-// 基础用法
-return errors.NotFound().
-    WithMessage("用户不存在").
-    Build()
-
-// 带上下文
-return errors.NotFound().
-    WithMessage("用户不存在").
-    WithField("user_id", userID).
-    Build()
-
-// 包装错误
+// 完整示例：构建错误并自动记录日志
 return errors.Database().
-    WithMessage("数据库操作失败").
-    WithCause(err).
-    Build()
+    Msg("数据库操作失败").
+    Err(err).
+    Field("user_id", userID).
+    Field("order_id", orderID).
+    Log()
 ```
+
+**方法说明：**
+- `Msg(string)` - 设置错误消息
+- `Err(error)` - 包装原始错误
+- `Field(key, value)` - 添加上下文字段（可多次调用）
+- `Log()` - 构建错误并自动记录日志
+- `Build()` - 仅构建错误，不记录日志（用于不需要日志的场景）
+
+### 使用建议
+
+1. **优先使用 `Log()`**：自动记录函数名、操作类型、上下文信息
+2. **链式添加字段**：使用多次 `Field()` 而非一次性传入多个字段
+3. **保持简洁**：只添加对调试有帮助的上下文字段
 
 ## 设计原则
 
 1. **明确性优于简洁性**：宁愿多写几行代码，也要清楚表达错误信息
 2. **上下文优先**：尽可能添加有助于调试的上下文字段
-3. **保留原始错误**：使用 `WithCause()` 包装错误，不要丢弃原始信息
+3. **保留原始错误**：使用 `Err()` 包装错误，不要丢弃原始信息
 4. **统一处理**：在中间件层统一处理错误到 HTTP 响应的转换
-5. **结构化日志**：充分利用错误的结构化信息进行日志记录
+5. **结构化日志**：使用 `Log()` 方法自动记录结构化日志，包含函数名、类型、字段等信息
 
 ## 常见模式
 
@@ -515,7 +520,7 @@ return errors.Database().
 
 ```go
 if user == nil {
-    return errors.NotFound().Build()
+    return errors.NotFound().Log()
 }
 ```
 
@@ -524,8 +529,8 @@ if user == nil {
 ```go
 if user == nil {
     return errors.NotFound().
-        WithMessage("指定用户不存在").
-        Build()
+        Msg("指定用户不存在").
+        Log()
 }
 ```
 
@@ -534,44 +539,62 @@ if user == nil {
 ```go
 if user == nil {
     return errors.NotFound().
-        WithMessage("用户不存在").
-        WithField("user_id", userID).
-        Build()
+        Msg("用户不存在").
+        Field("user_id", userID).
+        Log()
 }
 ```
 
-### 模式 4：包装数据库错误
+### 模式 4：包装数据库错误（工具函数）
 
 ```go
 err := db.First(&user, id).Error
 if err != nil {
+    // FromDatabaseError 自动转换为相应的 AppError
     return errors.FromDatabaseError(err)
 }
 ```
 
-### 模式 5：完整错误信息
+### 模式 5：完整错误信息（多个上下文字段）
 
 ```go
 return errors.Internal().
-    WithMessage("处理订单失败").
-    WithCause(originalErr).
-    WithFields(map[string]interface{}{
-        "order_id":   orderID,
-        "user_id":    userID,
-        "step":       "payment",
-        "timestamp":  time.Now(),
-    }).
-    Build()
+    Msg("处理订单失败").
+    Err(originalErr).
+    Field("order_id", orderID).
+    Field("user_id", userID).
+    Field("step", "payment").
+    Field("timestamp", time.Now()).
+    Log()
+```
+
+### 模式 6：不需要日志记录
+
+```go
+// 某些场景不需要记录日志，使用 Build() 而非 Log()
+if !hasPermission {
+    return errors.Forbidden().
+        Msg("权限不足").
+        Build()  // 不记录日志
+}
 ```
 
 ## 总结
 
 新的错误处理包提供了：
 
-- ✅ **简洁的 API**：链式调用，清晰易读
-- ✅ **类型安全**：预定义的错误类型
-- ✅ **丰富上下文**：支持任意字段
+- ✅ **简洁的 API**：使用 `Msg()`, `Err()`, `Field()` 链式调用，清晰易读
+- ✅ **自动日志记录**：`Log()` 方法自动记录函数名、操作类型、上下文字段
+- ✅ **类型安全**：预定义的错误类型保证一致性
+- ✅ **丰富上下文**：支持任意字段，便于调试
 - ✅ **完整追踪**：保留原始错误链
 - ✅ **统一处理**：便于中间件和日志集成
+
+**推荐用法：**
+
+```go
+// 一行代码完成错误构建和日志记录
+return errors.Database().Msg("操作失败").Err(err).Field("id", id).Log()
+```
 
 遵循本指南，可以构建健壮、易于调试的错误处理体系。

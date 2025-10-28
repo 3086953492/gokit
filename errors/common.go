@@ -42,12 +42,12 @@ func FromDatabaseError(err error) *AppError {
 	}
 
 	if IsNotFoundError(err) {
-		return NotFound().WithCause(err).Build()
+		return NotFound().Err(err).Build()
 	}
 
 	if IsDuplicateError(err) {
-		return Duplicate().WithCause(err).Build()
+		return Duplicate().Err(err).Build()
 	}
 
-	return Database().WithCause(err).Build()
+	return Database().Err(err).Build()
 }

@@ -174,6 +174,32 @@ func main() {
 
 ### 2. 错误日志记录
 
+**注意：** 推荐使用 `errors` 包的简化 API 进行错误日志记录，它会自动获取函数名并记录日志。
+
+```go
+package main
+
+import (
+    "github.com/3086953492/YaBase/errors"
+)
+
+func handleUser(userID string) (*User, error) {
+    user, err := repository.GetUser(userID)
+    if err != nil {
+        // 使用 errors 包的 Log() 方法，自动记录日志
+        return nil, errors.Database().
+            Msg("用户验证失败").
+            Err(err).
+            Field("user_id", userID).
+            Field("action", "validate").
+            Log()
+    }
+    return user, nil
+}
+```
+
+如果需要直接使用 logger 包记录非错误日志：
+
 ```go
 package main
 
@@ -182,14 +208,11 @@ import (
     "go.uber.org/zap"
 )
 
-func handleUser(userID string) error {
-    // 使用辅助函数记录错误
-    logger.LogError("handleUser", "user_validation", "用户验证失败", err,
+func handleUser(userID string) {
+    logger.Info("处理用户请求",
         zap.String("user_id", userID),
         zap.String("action", "validate"),
     )
-    
-    return err
 }
 ```
 
