@@ -3,7 +3,7 @@ package errors
 import stderrors "errors"
 
 // 以下函数重新导出自 Go 标准库 errors 包
-// 这样项目中只需要 import "github.com/3086953492/YaBase/errors" 一个包即可
+// 这样项目中只需要 import "github.com/3086953492/gokit/errors" 一个包即可
 
 // NewSimple 创建一个简单的错误（标准库函数）
 // 用于创建不需要结构化信息的简单错误

@@ -3,7 +3,7 @@ package database
 import (
 	"fmt"
 
-	"github.com/3086953492/YaBase/config/types"
+	"github.com/3086953492/gokit/config/types"
 )
 
 // BuildMySQLDSN 构建MySQL DSN

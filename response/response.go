@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/3086953492/YaBase/config"
-	"github.com/3086953492/YaBase/errors"
+	"github.com/3086953492/gokit/config"
+	"github.com/3086953492/gokit/errors"
 )
 
 type Response struct {

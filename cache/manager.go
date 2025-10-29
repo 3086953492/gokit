@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/3086953492/YaBase/redis"
+	"github.com/3086953492/gokit/redis"
 	"github.com/go-redis/cache/v9"
 )
 

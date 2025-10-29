@@ -1,11 +1,11 @@
-// yabase/logger/builder.go
+// gokit/logger/builder.go
 package logger
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/3086953492/YaBase/config/types"
+	"github.com/3086953492/gokit/config/types"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"

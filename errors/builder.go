@@ -7,7 +7,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/3086953492/YaBase/logger"
+	"github.com/3086953492/gokit/logger"
 )
 
 // typeToOperation 错误类型到操作名的映射

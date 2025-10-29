@@ -2,7 +2,7 @@
 
 ## 概述
 
-`response` 包为 YaBase 项目提供了统一的 HTTP 响应处理机制，支持成功响应、错误响应和分页响应。该包与 `errors` 包紧密集成，能够自动处理不同类型的应用错误并返回相应的 HTTP 状态码。
+`response` 包为 gokit 项目提供了统一的 HTTP 响应处理机制，支持成功响应、错误响应和分页响应。该包与 `errors` 包紧密集成，能够自动处理不同类型的应用错误并返回相应的 HTTP 状态码。
 
 ## 核心结构
 
@@ -168,8 +168,8 @@ package handlers
 import (
     "strconv"
     "github.com/gin-gonic/gin"
-    "github.com/3086953492/YaBase/response"
-    "github.com/3086953492/YaBase/errors"
+    "github.com/3086953492/gokit/response"
+    "github.com/3086953492/gokit/errors"
 )
 
 // 获取用户信息

@@ -1,4 +1,4 @@
-module github.com/3086953492/YaBase
+module github.com/3086953492/gokit
 
 go 1.23.4
 

@@ -1,6 +1,6 @@
 package config
 
-import "github.com/3086953492/YaBase/config/types"
+import "github.com/3086953492/gokit/config/types"
 
 type Config struct {
 	Server     types.ServerConfig     `json:"server" yaml:"server" mapstructure:"server"`

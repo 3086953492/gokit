@@ -1,4 +1,4 @@
-// yabase/logger/logger.go
+// gokit/logger/logger.go
 package logger
 
 import (

@@ -1,6 +1,6 @@
-# YaBase Logger 使用指南
+# gokit Logger 使用指南
 
-YaBase Logger 是一个基于 Zap 的高性能日志库，提供了灵活的配置选项、日志轮转、自动清理等功能。
+gokit Logger 是一个基于 Zap 的高性能日志库，提供了灵活的配置选项、日志轮转、自动清理等功能。
 
 ## 功能特性
 
@@ -20,7 +20,7 @@ YaBase Logger 是一个基于 Zap 的高性能日志库，提供了灵活的配�
 package main
 
 import (
-    "github.com/3086953492/YaBase/logger"
+    "github.com/3086953492/gokit/logger"
     "go.uber.org/zap"
 )
 
@@ -39,7 +39,7 @@ func main() {
 package main
 
 import (
-    "github.com/3086953492/YaBase/logger"
+    "github.com/3086953492/gokit/logger"
     "go.uber.org/zap"
 )
 
@@ -71,8 +71,8 @@ func main() {
 package main
 
 import (
-    "github.com/3086953492/YaBase/configs"
-    "github.com/3086953492/YaBase/logger"
+    "github.com/3086953492/gokit/configs"
+    "github.com/3086953492/gokit/logger"
 )
 
 func main() {
@@ -151,7 +151,7 @@ logger, err := builder.Build()
 package main
 
 import (
-    "github.com/3086953492/YaBase/logger"
+    "github.com/3086953492/gokit/logger"
     "go.uber.org/zap"
 )
 
@@ -180,7 +180,7 @@ func main() {
 package main
 
 import (
-    "github.com/3086953492/YaBase/errors"
+    "github.com/3086953492/gokit/errors"
 )
 
 func handleUser(userID string) (*User, error) {
@@ -204,7 +204,7 @@ func handleUser(userID string) (*User, error) {
 package main
 
 import (
-    "github.com/3086953492/YaBase/logger"
+    "github.com/3086953492/gokit/logger"
     "go.uber.org/zap"
 )
 
@@ -222,7 +222,7 @@ func handleUser(userID string) {
 package main
 
 import (
-    "github.com/3086953492/YaBase/logger"
+    "github.com/3086953492/gokit/logger"
     "go.uber.org/zap"
 )
 
@@ -244,7 +244,7 @@ func main() {
 package main
 
 import (
-    "github.com/3086953492/YaBase/logger"
+    "github.com/3086953492/gokit/logger"
     "go.uber.org/zap"
 )
 

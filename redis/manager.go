@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/3086953492/YaBase/config/types"
+	"github.com/3086953492/gokit/config/types"
 	"github.com/redis/go-redis/v9"
 )
 

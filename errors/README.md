@@ -2,7 +2,7 @@
 
 ## 概述
 
-`errors` 包是 YaBase 项目的统一错误处理模块，提供了基于链式 API 的现代化错误构建系统。通过流畅的接口设计，支持错误包装、上下文字段和类型检查。
+`errors` 包是 gokit 项目的统一错误处理模块，提供了基于链式 API 的现代化错误构建系统。通过流畅的接口设计，支持错误包装、上下文字段和类型检查。
 
 ## 核心理念
 
@@ -95,7 +95,7 @@ func ProcessPayment(orderID string, amount float64, userID uint) error {
 
 ## 标准库函数重新导出
 
-为了方便使用，本包重新导出了 Go 标准库 `errors` 包的常用函数，这样项目中只需要 `import "github.com/3086953492/YaBase/errors"` 一个包即可。
+为了方便使用，本包重新导出了 Go 标准库 `errors` 包的常用函数，这样项目中只需要 `import "github.com/3086953492/gokit/errors"` 一个包即可。
 
 ### 可用的标准库函数
 
@@ -112,7 +112,7 @@ func ProcessPayment(orderID string, amount float64, userID uint) error {
 ```go
 import (
     "io"
-    "github.com/3086953492/YaBase/errors"
+    "github.com/3086953492/gokit/errors"
 )
 
 // 创建简单错误
