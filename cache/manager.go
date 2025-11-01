@@ -6,8 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/3086953492/gokit/redis"
 	"github.com/go-redis/cache/v9"
+
+	"github.com/3086953492/gokit/redis"
 )
 
 var (
@@ -80,6 +81,21 @@ func DeleteByPrefix(ctx context.Context, prefix string) error {
 	}
 
 	return deleteCacheKeysByPrefix(ctx, prefix, redisClient, c)
+}
+
+// DeleteByContains 删除包含指定子串的所有缓存
+func DeleteByContains(ctx context.Context, substring string) error {
+	c := GetGlobalCache()
+	if c == nil {
+		return ErrCacheNotInitialized
+	}
+
+	redisClient := redis.GetGlobalRedis()
+	if redisClient == nil {
+		return ErrRedisNotInitialized
+	}
+
+	return deleteCacheKeysByContains(ctx, substring, redisClient, c)
 }
 
 // Exists 检查缓存键是否存在
