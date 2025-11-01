@@ -1,8 +1,10 @@
 package validator
 
 import (
-	"github.com/go-playground/validator/v10"
+	"fmt"
 	"sync"
+
+	"github.com/go-playground/validator/v10"
 )
 
 var (
@@ -18,30 +20,24 @@ func GetValidator() *validator.Validate {
 	return instance
 }
 
-// RegisterValidation 注册自定义验证规则
-func RegisterValidation(tag string, fn validator.Func) error {
+// Register 注册单个自定义验证规则
+func Register(tag string, fn ValidatorFunc) error {
 	return GetValidator().RegisterValidation(tag, fn)
+}
+
+// RegisterBatch 批量注册自定义验证规则
+func RegisterBatch(validators map[string]ValidatorFunc) error {
+	v := GetValidator()
+	for tag, fn := range validators {
+		if err := v.RegisterValidation(tag, fn); err != nil {
+			return fmt.Errorf("注册验证器 %s 失败: %w", tag, err)
+		}
+	}
+	return nil
 }
 
 // ResetValidator 重置验证器实例（主要用于测试）
 func ResetValidator() {
 	instance = nil
-}
-
-// RegisterPackageValidators 注册包级验证器（便捷方法）
-func RegisterPackageValidators(pkg ValidatorPackage, options ...RegisterOption) error {
-	return NewAutoRegistry().
-		RegisterPackage("default", pkg, options...).
-		Apply()
-}
-
-// RegisterMultiplePackages 注册多个包
-func RegisterMultiplePackages(packages map[string]ValidatorPackage, globalOptions ...RegisterOption) error {
-	registry := NewAutoRegistry()
-
-	for name, pkg := range packages {
-		registry.RegisterPackage(name, pkg, globalOptions...)
-	}
-
-	return registry.Apply()
+	once = sync.Once{}
 }
