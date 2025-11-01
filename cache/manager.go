@@ -16,7 +16,7 @@ var (
 	ErrCacheNotInitialized = errors.New("缓存未初始化，请先调用 InitCache()")
 
 	// ErrRedisNotInitialized Redis 未初始化错误
-	ErrRedisNotInitialized = errors.New("Redis 客户端未初始化")
+	ErrRedisNotInitialized = errors.New("redis 客户端未初始化")
 )
 
 // 全局缓存管理器
