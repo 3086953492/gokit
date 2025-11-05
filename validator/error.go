@@ -10,88 +10,59 @@ import (
 
 // ValidationResult 验证结果
 type ValidationResult struct {
-	errors map[string]string // 字段名 -> 中文错误消息
+	Valid   bool              // 是否验证通过
+	Message string            // 第一个错误消息（快捷访问）
+	Errors  map[string]string // 所有错误（字段名 -> 错误消息）
 }
 
-// newValidationResult 创建验证结果
+// newValidationResult 创建空的验证结果（验证通过）
 func newValidationResult() *ValidationResult {
 	return &ValidationResult{
-		errors: make(map[string]string),
+		Valid:  true,
+		Errors: make(map[string]string),
 	}
 }
 
 // newValidationResultFromError 从 validator 错误创建验证结果
 func newValidationResultFromError(err error, trans ut.Translator) *ValidationResult {
-	result := newValidationResult()
-
 	if err == nil {
-		return result
+		return newValidationResult()
 	}
 
 	// 转换为 ValidationErrors
 	validationErrors, ok := err.(validator.ValidationErrors)
 	if !ok {
-		// 如果不是验证错误，返回空结果
-		return result
+		// 如果不是验证错误，返回验证通过的结果
+		return newValidationResult()
 	}
 
 	// 翻译所有错误
+	errors := make(map[string]string)
+	var firstMessage string
 	for _, e := range validationErrors {
-		result.errors[e.Field()] = e.Translate(trans)
+		msg := e.Translate(trans)
+		errors[e.Field()] = msg
+		// 记录第一个错误消息
+		if firstMessage == "" {
+			firstMessage = msg
+		}
 	}
 
-	return result
-}
-
-// Valid 检查是否验证通过
-func (r *ValidationResult) Valid() bool {
-	return len(r.errors) == 0
-}
-
-// Errors 获取所有错误（字段名 -> 错误消息）
-func (r *ValidationResult) Errors() map[string]string {
-	if r.errors == nil {
-		return make(map[string]string)
+	return &ValidationResult{
+		Valid:   len(errors) == 0,
+		Message: firstMessage,
+		Errors:  errors,
 	}
-	return r.errors
-}
-
-// First 获取第一个错误消息
-func (r *ValidationResult) First() string {
-	if len(r.errors) == 0 {
-		return ""
-	}
-
-	// 返回第一个错误消息
-	for _, msg := range r.errors {
-		return msg
-	}
-
-	return ""
-}
-
-// FirstWithField 获取第一个错误消息（包含字段名）
-func (r *ValidationResult) FirstWithField() string {
-	if len(r.errors) == 0 {
-		return ""
-	}
-
-	// 返回第一个错误消息，格式：字段: 错误
-	for field, msg := range r.errors {
-		return fmt.Sprintf("%s: %s", field, msg)
-	}
-
-	return ""
 }
 
 // ErrorList 获取错误列表
 func (r *ValidationResult) ErrorList() []FieldError {
-	if len(r.errors) == 0 {
+	if len(r.Errors) == 0 {
 		return []FieldError{}
 	}
 
-	errors := make([]FieldError, 0, len(r.errors))
-	for field, msg := range r.errors {
+	errors := make([]FieldError, 0, len(r.Errors))
+	for field, msg := range r.Errors {
 		errors = append(errors, FieldError{
 			Field:   field,
 			Message: msg,
@@ -103,12 +74,12 @@ func (r *ValidationResult) ErrorList() []FieldError {
 
 // String 返回错误字符串（所有错误用分号分隔）
 func (r *ValidationResult) String() string {
-	if len(r.errors) == 0 {
+	if len(r.Errors) == 0 {
 		return ""
 	}
 
 	var messages []string
-	for field, msg := range r.errors {
+	for field, msg := range r.Errors {
 		messages = append(messages, fmt.Sprintf("%s: %s", field, msg))
 	}
 
@@ -117,9 +88,8 @@ func (r *ValidationResult) String() string {
 
 // Error 实现 error 接口
 func (r *ValidationResult) Error() string {
-	if r.Valid() {
+	if r.Valid {
 		return ""
 	}
 	return r.String()
 }
-
