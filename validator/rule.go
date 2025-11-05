@@ -56,20 +56,19 @@ func (v *Validator) registerTranslation(tag string, message string) error {
 	return v.validate.RegisterTranslation(
 		tag,
 		v.translator,
-		// 注册函数：添加翻译文本
+		// 注册函数：将用户友好的占位符转换为 validator 的数字格式
 		func(ut ut.Translator) error {
-			return ut.Add(tag, message, true)
+			// 转换占位符：{field} -> {0}, {value} -> {1}, {param} -> {2}
+			msg := strings.ReplaceAll(message, "{field}", "{0}")
+			msg = strings.ReplaceAll(msg, "{value}", "{1}")
+			msg = strings.ReplaceAll(msg, "{param}", "{2}")
+			return ut.Add(tag, msg, true)
 		},
-		// 翻译函数：替换占位符
+		// 翻译函数：提供占位符的实际值
 		func(ut ut.Translator, fe validator.FieldError) string {
-			msg, _ := ut.T(tag)
-
-			// 替换占位符
-			msg = strings.ReplaceAll(msg, "{field}", fe.Field())
-			msg = strings.ReplaceAll(msg, "{value}", fmt.Sprintf("%v", fe.Value()))
-			msg = strings.ReplaceAll(msg, "{param}", fe.Param())
-
-			return msg
+			// ut.T() 会按顺序替换 {0}, {1}, {2}
+			t, _ := ut.T(tag, fe.Field(), fmt.Sprintf("%v", fe.Value()), fe.Param())
+			return t
 		},
 	)
 }
