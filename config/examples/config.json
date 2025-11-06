@@ -24,7 +24,9 @@
   },
   "jwt": {
     "secret": "examplekey",
-    "expire": "1h"
+    "expire": "1h",
+    "refresh_expire": "24h",
+    "issuer": "example.com"
   },
   "log": {
     "level": "info",
