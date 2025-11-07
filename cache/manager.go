@@ -98,6 +98,58 @@ func DeleteByContains(ctx context.Context, substring string) error {
 	return deleteCacheKeysByContains(ctx, substring, redisClient, c)
 }
 
+// DeleteByPrefixes 批量删除多个前缀的所有缓存
+func DeleteByPrefixes(ctx context.Context, prefixes []string) error {
+	if len(prefixes) == 0 {
+		return nil
+	}
+
+	c := GetGlobalCache()
+	if c == nil {
+		return ErrCacheNotInitialized
+	}
+
+	redisClient := redis.GetGlobalRedis()
+	if redisClient == nil {
+		return ErrRedisNotInitialized
+	}
+
+	var errs []error
+	for _, prefix := range prefixes {
+		if err := deleteCacheKeysByPrefix(ctx, prefix, redisClient, c); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
+// DeleteByContainsList 批量删除包含多个子串的所有缓存
+func DeleteByContainsList(ctx context.Context, substrings []string) error {
+	if len(substrings) == 0 {
+		return nil
+	}
+
+	c := GetGlobalCache()
+	if c == nil {
+		return ErrCacheNotInitialized
+	}
+
+	redisClient := redis.GetGlobalRedis()
+	if redisClient == nil {
+		return ErrRedisNotInitialized
+	}
+
+	var errs []error
+	for _, substring := range substrings {
+		if err := deleteCacheKeysByContains(ctx, substring, redisClient, c); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
 // Exists 检查缓存键是否存在
 func Exists(ctx context.Context, key string) (bool, error) {
 	c := GetGlobalCache()
