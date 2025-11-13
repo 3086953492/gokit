@@ -74,6 +74,16 @@ func Paginated(c *gin.Context, data any, total int64, page, pageSize int) {
 	})
 }
 
+// RedirectTemporary 临时重定向（HTTP 302）
+func RedirectTemporary(c *gin.Context, url string) {
+	c.Redirect(http.StatusFound, url)
+}
+
+// RedirectPermanent 永久重定向（HTTP 301）
+func RedirectPermanent(c *gin.Context, url string) {
+	c.Redirect(http.StatusMovedPermanently, url)
+}
+
 // getHTTPStatus 将错误类型映射为HTTP状态码
 func getHTTPStatus(errType string) int {
 	switch errType {
