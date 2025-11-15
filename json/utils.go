@@ -1,47 +1,39 @@
 package json
 
-// AllInStringList 检查所有给定的值是否都存在于列表中
-// 参数:
-//   - list: 目标字符串列表
-//   - values: 需要检查的一个或多个字符串值
-//
-// 返回:
-//   - bool: 当所有 values 都在 list 中时返回 true，否则返回 false
-//
-// 行为约定:
-//   - 匹配规则为大小写敏感的字符串全等比较
-//   - 当 values 为空时返回 true（没有需要校验的值视为通过）
-//   - 当 list 为空且 values 非空时返回 false
-//
-// 使用示例:
-//
-//	grantTypes := []string{"authorization_code", "client_credentials", "refresh_token"}
-//	if AllInStringList(grantTypes, "authorization_code", "refresh_token") {
-//	    // 所有值都在列表中
-//	}
-func AllInStringList(list []string, values ...string) bool {
-	// 当没有需要检查的值时，视为通过
-	if len(values) == 0 {
-		return true
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// IsSubset 判断 subJSON 是否为 supJSON 的子集
+// subJSON 和 supJSON 应该是 JSON 数组字符串，例如: `["authorization_code", "client_credentials"]`
+// 返回判断结果和可能的错误
+func IsSubset(subJSON string, supJSON string) error {
+	var sub []string
+	var sup []string
+
+	// 解析 subJSON
+	if err := json.Unmarshal([]byte(subJSON), &sub); err != nil {
+		return fmt.Errorf("解析 sub JSON 失败: %w", err)
 	}
 
-	// 当列表为空但有需要检查的值时，返回 false
-	if len(list) == 0 {
-		return false
+	// 解析 supJSON
+	if err := json.Unmarshal([]byte(supJSON), &sup); err != nil {
+		return fmt.Errorf("解析 sup JSON 失败: %w", err)
 	}
 
-	// 将列表转换为 map 以提高查找效率
-	listMap := make(map[string]struct{}, len(list))
-	for _, item := range list {
-		listMap[item] = struct{}{}
+	// 将 sup 转换为 map 以提高查找效率
+	supSet := make(map[string]bool)
+	for _, item := range sup {
+		supSet[item] = true
 	}
 
-	// 检查所有值是否都在 map 中
-	for _, value := range values {
-		if _, exists := listMap[value]; !exists {
-			return false
+	// 检查 sub 中的每个元素是否都在 supSet 中
+	for _, item := range sub {
+		if !supSet[item] {
+			return fmt.Errorf("sub 中的元素 %s 不在 sup 中", item)
 		}
 	}
 
-	return true
+	return nil
 }
