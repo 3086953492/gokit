@@ -77,20 +77,30 @@ func Paginated(c *gin.Context, data any, total int64, page, pageSize int) {
 
 // RedirectTemporary 临时重定向（HTTP 302）
 // 可选参数 appErr 用于在重定向 URL 上附加错误信息（作为查询参数）
-func RedirectTemporary(c *gin.Context, targetURL string, appErr ...*errors.AppError) {
+func RedirectTemporary(c *gin.Context, targetURL string, err error) {
 	finalURL := targetURL
-	if len(appErr) > 0 && appErr[0] != nil {
-		finalURL = buildRedirectURLWithError(targetURL, appErr[0])
+	if err != nil {
+		var appErr *errors.AppError
+		if errors.As(err, &appErr) {
+			finalURL = buildRedirectURLWithError(targetURL, appErr)
+		}else {
+			finalURL = buildRedirectURLWithError(targetURL, errors.Internal().Msg("系统内部错误").Err(err).Build())
+		}
 	}
 	c.Redirect(http.StatusFound, finalURL)
 }
 
 // RedirectPermanent 永久重定向（HTTP 301）
 // 可选参数 appErr 用于在重定向 URL 上附加错误信息（作为查询参数）
-func RedirectPermanent(c *gin.Context, targetURL string, appErr ...*errors.AppError) {
+func RedirectPermanent(c *gin.Context, targetURL string, err error) {
 	finalURL := targetURL
-	if len(appErr) > 0 && appErr[0] != nil {
-		finalURL = buildRedirectURLWithError(targetURL, appErr[0])
+	if err != nil {
+		var appErr *errors.AppError
+		if errors.As(err, &appErr) {
+			finalURL = buildRedirectURLWithError(targetURL, appErr)
+		}else {
+			finalURL = buildRedirectURLWithError(targetURL, errors.Internal().Msg("系统内部错误").Err(err).Build())
+		}
 	}
 	c.Redirect(http.StatusMovedPermanently, finalURL)
 }
