@@ -3,6 +3,7 @@ package response
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 
@@ -75,13 +76,45 @@ func Paginated(c *gin.Context, data any, total int64, page, pageSize int) {
 }
 
 // RedirectTemporary 临时重定向（HTTP 302）
-func RedirectTemporary(c *gin.Context, url string) {
-	c.Redirect(http.StatusFound, url)
+// 可选参数 appErr 用于在重定向 URL 上附加错误信息（作为查询参数）
+func RedirectTemporary(c *gin.Context, targetURL string, appErr ...*errors.AppError) {
+	finalURL := targetURL
+	if len(appErr) > 0 && appErr[0] != nil {
+		finalURL = buildRedirectURLWithError(targetURL, appErr[0])
+	}
+	c.Redirect(http.StatusFound, finalURL)
 }
 
 // RedirectPermanent 永久重定向（HTTP 301）
-func RedirectPermanent(c *gin.Context, url string) {
-	c.Redirect(http.StatusMovedPermanently, url)
+// 可选参数 appErr 用于在重定向 URL 上附加错误信息（作为查询参数）
+func RedirectPermanent(c *gin.Context, targetURL string, appErr ...*errors.AppError) {
+	finalURL := targetURL
+	if len(appErr) > 0 && appErr[0] != nil {
+		finalURL = buildRedirectURLWithError(targetURL, appErr[0])
+	}
+	c.Redirect(http.StatusMovedPermanently, finalURL)
+}
+
+// buildRedirectURLWithError 构建带错误信息的重定向 URL
+// 将 AppError 的类型和消息作为查询参数追加到目标 URL 上，并自动进行 URL 编码
+func buildRedirectURLWithError(rawURL string, appErr *errors.AppError) string {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		// 解析失败时返回原始 URL，保证容错
+		return rawURL
+	}
+
+	// 获取现有查询参数
+	query := parsedURL.Query()
+
+	// 追加错误信息到查询参数
+	query.Set("error", appErr.Type)
+	query.Set("error_message", appErr.Message)
+
+	// 将修改后的查询参数编码并写回 URL
+	parsedURL.RawQuery = query.Encode()
+
+	return parsedURL.String()
 }
 
 // getHTTPStatus 将错误类型映射为HTTP状态码
