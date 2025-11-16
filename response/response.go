@@ -117,9 +117,11 @@ func buildRedirectURLWithError(rawURL string, appErr *errors.AppError) string {
 	// 获取现有查询参数
 	query := parsedURL.Query()
 
+	errorCode := mapToOAuthErrorCode(appErr.Type)
+
 	// 追加错误信息到查询参数
-	query.Set("error", appErr.Type)
-	query.Set("error_message", appErr.Message)
+	query.Set("error", errorCode)
+	query.Set("error_description", appErr.Message)
 
 	// 将修改后的查询参数编码并写回 URL
 	parsedURL.RawQuery = query.Encode()
@@ -144,5 +146,19 @@ func getHTTPStatus(errType string) int {
 		return 422
 	default:
 		return 500
+	}
+}
+
+// mapToOAuthErrorCode 将 AppError 类型映射为 OAuth 2.0 标准错误代码
+func mapToOAuthErrorCode(errType string) string {
+	switch errType {
+	case errors.TypeInvalidInput:
+		return "invalid_request"
+	case errors.TypeUnauthorized:
+		return "unauthorized_client"
+	case errors.TypeForbidden:
+		return "access_denied"
+	default:
+		return "server_error"
 	}
 }
