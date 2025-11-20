@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // 错误类型常量
@@ -50,4 +52,8 @@ func FromDatabaseError(err error) *AppError {
 	}
 
 	return Database().Err(err).Build()
+}
+
+func IsJwtTokenExpiredError(err error) bool {
+	return Is(err, jwt.ErrTokenExpired)
 }
