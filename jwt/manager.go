@@ -100,11 +100,7 @@ func (m *Manager) ParseToken(tokenString string) (*Claims, error) {
 	})
 
 	if err != nil {
-		// 检查是否是过期错误
-		if jwt.ErrTokenExpired.Error() == err.Error() {
-			return nil, ErrExpiredToken
-		}
-		return nil, ErrInvalidToken
+		return nil, err
 	}
 
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
@@ -125,7 +121,7 @@ func (m *Manager) RefreshAccessToken(refreshToken string) (string, error) {
 	// 解析刷新令牌
 	claims, err := m.ParseToken(refreshToken)
 	if err != nil {
-		return "", ErrInvalidRefreshToken
+		return "", err
 	}
 
 	// 验证令牌类型
@@ -181,4 +177,3 @@ func RefreshAccessToken(refreshToken string) (string, error) {
 	}
 	return m.RefreshAccessToken(refreshToken)
 }
-
