@@ -1,7 +1,6 @@
 package errors
 
 import (
-	"errors"
 	"strings"
 
 	"gorm.io/gorm"
@@ -23,7 +22,7 @@ const (
 
 // IsNotFoundError 检查是否为数据库未找到错误
 func IsNotFoundError(err error) bool {
-	return errors.Is(err, gorm.ErrRecordNotFound)
+	return Is(err, gorm.ErrRecordNotFound)
 }
 
 // IsDuplicateError 检查是否为重复键错误
