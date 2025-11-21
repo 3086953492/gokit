@@ -22,9 +22,9 @@
     "password": "",
     "db": 0
   },
-  "jwt": {
-    "secret": "examplekey",
-    "expire": "1h",
+  "authtoken": {
+    "secret": "exampleauthkey",
+    "access_expire": "1h",
     "refresh_expire": "24h",
     "issuer": "example.com"
   },
