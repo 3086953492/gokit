@@ -28,6 +28,12 @@
     "refresh_expire": "24h",
     "issuer": "example.com"
   },
+  "oauth": {
+    "secret": "exampleoauthkey",
+    "auth_code_expire": "10m",
+    "access_token_expire": "1h",
+    "refresh_token_expire": "168h"
+  },
   "log": {
     "level": "info",
     "filename": "logs/example.log",
