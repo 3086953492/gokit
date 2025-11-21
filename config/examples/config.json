@@ -40,9 +40,7 @@
     "logs_dir": "logs"
   },
   "middleware": {
-    "jwt": {
-      "secret": "examplekey",
-      "expire": "1h",
+    "auth": {
       "skip_paths": [
         "/api/account/v1/auth/login",
         "/api/account/v1/auth/register"
