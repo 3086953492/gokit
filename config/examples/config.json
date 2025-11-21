@@ -22,7 +22,7 @@
     "password": "",
     "db": 0
   },
-  "authtoken": {
+  "auth_token": {
     "secret": "exampleauthkey",
     "access_expire": "1h",
     "refresh_expire": "24h",

@@ -11,7 +11,7 @@ import (
 
 // Manager JWT管理器
 type Manager struct {
-	config types.JWTConfig
+	config types.AuthTokenConfig
 }
 
 // 全局JWT管理器
@@ -23,7 +23,7 @@ var (
 
 // InitJWT 初始化JWT管理器
 // 此函数使用 sync.Once 保证只初始化一次
-func InitJWT(cfg types.JWTConfig) error {
+func InitJWT(cfg types.AuthTokenConfig) error {
 	initOnce.Do(func() {
 		if cfg.Secret == "" {
 			initErr = ErrInvalidToken
@@ -61,7 +61,7 @@ func (m *Manager) GenerateToken(userID, username string, extra map[string]interf
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    m.config.Issuer,
 			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(m.config.Expire)),
+			ExpiresAt: jwt.NewNumericDate(now.Add(m.config.AccessExpire)),
 			NotBefore: jwt.NewNumericDate(now),
 		},
 	}
