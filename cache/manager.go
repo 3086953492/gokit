@@ -124,9 +124,11 @@ func DeleteByPrefixes(ctx context.Context, prefixes []string) error {
 	return errors.Join(errs...)
 }
 
-// DeleteByContainsList 批量删除包含多个子串的所有缓存
-func DeleteByContainsList(ctx context.Context, substrings []string) error {
-	if len(substrings) == 0 {
+// DeleteByContainsList 根据前缀和多组条件批量删除缓存
+// 每组条件会通过 BuildKeyFromConds 标准化为稳定的子串，然后使用 DeleteByContains 逻辑删除
+// 示例：DeleteByContainsList(ctx, "oauth_client", []map[string]any{{"id": 1}, {"id": 2}})
+func DeleteByContainsList(ctx context.Context, prefix string, condsList []map[string]any) error {
+	if len(condsList) == 0 {
 		return nil
 	}
 
@@ -141,7 +143,8 @@ func DeleteByContainsList(ctx context.Context, substrings []string) error {
 	}
 
 	var errs []error
-	for _, substring := range substrings {
+	for _, conds := range condsList {
+		substring := BuildKeyFromConds(prefix, conds)
 		if err := deleteCacheKeysByContains(ctx, substring, redisClient, c); err != nil {
 			errs = append(errs, err)
 		}
