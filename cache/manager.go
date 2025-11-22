@@ -159,3 +159,18 @@ func Exists(ctx context.Context, key string) (bool, error) {
 	exists := c.Exists(ctx, key)
 	return exists, nil
 }
+
+// DeleteByConds 根据前缀和条件删除缓存
+// 使用标准化的 key 生成规则，确保能准确删除对应缓存
+func DeleteByConds(ctx context.Context, prefix string, conds map[string]any) error {
+	key := BuildKeyFromConds(prefix, conds)
+	return Delete(ctx, key)
+}
+
+// DeleteByCondsPrefix 删除指定前缀+条件前缀的所有缓存
+// 例如：DeleteByCondsPrefix(ctx, "oauth_client", map[string]any{"id": 1})
+// 会删除所有以 "oauth_client|id=1" 开头的缓存
+func DeleteByCondsPrefix(ctx context.Context, prefix string, conds map[string]any) error {
+	keyPrefix := BuildKeyFromConds(prefix, conds)
+	return DeleteByPrefix(ctx, keyPrefix)
+}

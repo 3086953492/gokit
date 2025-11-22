@@ -33,6 +33,22 @@ func (b *Builder[T]) Key(key string) *Builder[T] {
 	return b
 }
 
+// KeyWithConds 使用前缀和条件 map 构造稳定的缓存键
+// 内部会对条件进行标准化处理，保证相同条件生成相同的 key
+// 示例：KeyWithConds("oauth_client", map[string]any{"id": 1})
+func (b *Builder[T]) KeyWithConds(prefix string, conds map[string]any) *Builder[T] {
+	b.key = BuildKeyFromConds(prefix, conds)
+	return b
+}
+
+// KeyWithParts 使用前缀和多个部分构造缓存键
+// 内部会对每个部分进行标准化处理
+// 示例：KeyWithParts("user", userId, "profile")
+func (b *Builder[T]) KeyWithParts(prefix string, parts ...any) *Builder[T] {
+	b.key = BuildKey(prefix, parts...)
+	return b
+}
+
 // TTL 设置 Redis 缓存过期时间
 func (b *Builder[T]) TTL(ttl time.Duration) *Builder[T] {
 	b.ttl = ttl
