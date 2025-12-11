@@ -78,5 +78,12 @@
       "organization_name": "organizationName",
       "application_name": "applicationName"
     }
+  },
+  "aliyun_oss": {
+    "access_key_id": "your-access-key-id",
+    "access_key_secret": "your-access-key-secret",
+    "endpoint": "oss-cn-hangzhou.aliyuncs.com",
+    "bucket": "my-bucket",
+    "domain": "https://cdn.example.com"
   }
 }
