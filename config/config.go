@@ -11,4 +11,5 @@ type Config struct {
 	Log        types.LogConfig        `json:"log" yaml:"log" mapstructure:"log"`
 	Middleware types.MiddlewareConfig `json:"middleware" yaml:"middleware" mapstructure:"middleware"`
 	Casdoor    types.CasdoorConfig    `json:"casdoor" yaml:"casdoor" mapstructure:"casdoor"`
+	AliyunOSS  types.AliyunOSSConfig  `json:"aliyun_oss" yaml:"aliyun_oss" mapstructure:"aliyun_oss"`
 }
