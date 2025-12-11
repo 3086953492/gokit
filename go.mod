@@ -3,6 +3,7 @@ module github.com/3086953492/gokit
 go 1.23.4
 
 require (
+	github.com/aliyun/alibabacloud-oss-go-sdk-v2 v1.3.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-playground/locales v0.14.1
@@ -17,6 +18,8 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/gorm v1.30.5
 )
+
+require golang.org/x/time v0.4.0 // indirect
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect
