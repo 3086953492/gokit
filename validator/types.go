@@ -11,8 +11,7 @@ type FieldLevel = validator.FieldLevel
 // FieldError 字段验证错误详情
 type FieldError struct {
 	Field   string      // 字段名
-	Message string      // 中文错误消息
+	Message string      // 翻译后的错误消息
 	Tag     string      // 验证标签
-	Value   interface{} // 字段值
+	Value   any // 字段值
 }
-
