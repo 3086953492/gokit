@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"strings"
 
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
@@ -85,6 +86,7 @@ func (s *Store) Upload(ctx context.Context, key string, r io.Reader, opts *stora
 	meta := &storage.ObjectMeta{
 		Key:         key,
 		ContentType: safeDeref(opts, func(o *storage.WriteOptions) string { return o.ContentType }),
+		URL:         s.objectURL(key),
 	}
 	if result.ETag != nil {
 		meta.ETag = *result.ETag
@@ -117,6 +119,7 @@ func (s *Store) Download(ctx context.Context, key string, opts *storage.ReadOpti
 		Size:        safeDerefInt64(result.ContentLength),
 		ContentType: safeDerefString(result.ContentType),
 		ETag:        safeDerefString(result.ETag),
+		URL:         s.objectURL(key),
 	}
 	if result.LastModified != nil {
 		meta.LastModified = *result.LastModified
@@ -169,10 +172,12 @@ func (s *Store) List(ctx context.Context, prefix string, opts *storage.ListOptio
 
 	objects := make([]*storage.ObjectMeta, 0, len(result.Contents))
 	for _, obj := range result.Contents {
+		objKey := safeDerefString(obj.Key)
 		meta := &storage.ObjectMeta{
-			Key:  safeDerefString(obj.Key),
+			Key:  objKey,
 			Size: safeDerefInt64(obj.Size),
 			ETag: safeDerefString(obj.ETag),
+			URL:  s.objectURL(objKey),
 		}
 		if obj.LastModified != nil {
 			meta.LastModified = *obj.LastModified
@@ -228,6 +233,7 @@ func (s *Store) Head(ctx context.Context, key string) (*storage.ObjectMeta, erro
 		Size:        safeDerefInt64(result.ContentLength),
 		ContentType: safeDerefString(result.ContentType),
 		ETag:        safeDerefString(result.ETag),
+		URL:         s.objectURL(key),
 	}
 	if result.LastModified != nil {
 		meta.LastModified = *result.LastModified
@@ -280,4 +286,47 @@ func safeDerefString(p *string) string {
 // 当前 OSS SDK 中相关字段为非指针类型，这里预留一层封装便于未来扩展。
 func safeDerefInt64(v int64) int64 {
 	return v
+}
+
+// objectURL 生成对象的公开可访问 URL。
+// 优先使用 domain（配置的自定义域名或 CDN 域名），否则使用 bucket.endpoint 拼接。
+func (s *Store) objectURL(key string) string {
+	baseURL := s.baseURL()
+	escapedKey := escapeKey(key)
+	return baseURL + "/" + escapedKey
+}
+
+// baseURL 返回拼接 URL 的基础域名（带 scheme，无尾部 /）。
+func (s *Store) baseURL() string {
+	if s.domain != "" {
+		return normalizeBaseURL(s.domain)
+	}
+	endpoint := normalizeEndpoint(s.endpoint)
+	return "https://" + s.bucket + "." + endpoint
+}
+
+// normalizeBaseURL 规范化自定义域名，确保带 https:// 且无尾部 /。
+func normalizeBaseURL(domain string) string {
+	d := strings.TrimSpace(domain)
+	if !strings.HasPrefix(d, "http://") && !strings.HasPrefix(d, "https://") {
+		d = "https://" + d
+	}
+	return strings.TrimSuffix(d, "/")
+}
+
+// normalizeEndpoint 去除 endpoint 的 scheme 前缀和尾部 /。
+func normalizeEndpoint(endpoint string) string {
+	e := strings.TrimSpace(endpoint)
+	e = strings.TrimPrefix(e, "https://")
+	e = strings.TrimPrefix(e, "http://")
+	return strings.TrimSuffix(e, "/")
+}
+
+// escapeKey 对 key 进行 URL 编码，保留 "/" 作为目录分隔符。
+func escapeKey(key string) string {
+	parts := strings.Split(key, "/")
+	for i, p := range parts {
+		parts[i] = url.PathEscape(p)
+	}
+	return strings.Join(parts, "/")
 }

@@ -40,6 +40,7 @@ type ObjectMeta struct {
 	ETag         string            // 对象 ETag（通常为内容的 MD5）
 	LastModified time.Time         // 最后修改时间
 	UserMeta     map[string]string // 自定义元数据
+	URL          string            // 可访问直链（公开，不带签名）
 }
 
 // ListResult 列举结果。
