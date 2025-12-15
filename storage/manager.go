@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"sync"
 )
 
@@ -178,4 +179,83 @@ func validateKey(key string) error {
 		return fmt.Errorf("%w: key cannot be empty", ErrInvalidKey)
 	}
 	return nil
+}
+
+// DeleteByURL 根据对象 URL 删除存储后端中的对象。
+// 仅支持本库生成的公开直链（即 ObjectMeta.URL 格式）；
+// 若当前 Store 未实现 URLKeyResolver，返回 ErrURLDeleteUnsupported。
+func (m *Manager) DeleteByURL(ctx context.Context, rawURL string, opts ...DeleteOption) error {
+	key, err := m.parseKeyFromURL(rawURL)
+	if err != nil {
+		return err
+	}
+	return m.Delete(ctx, key, opts...)
+}
+
+// parseKeyFromURL 解析 rawURL 并提取对象 key。
+// 返回的 key 已做 URL 解码；若 URL 不合法或域名不允许，返回对应错误。
+func (m *Manager) parseKeyFromURL(rawURL string) (string, error) {
+	if rawURL == "" {
+		return "", fmt.Errorf("%w: url cannot be empty", ErrInvalidURL)
+	}
+
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", fmt.Errorf("%w: %v", ErrInvalidURL, err)
+	}
+
+	// 必须是 http(s) scheme
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return "", fmt.Errorf("%w: unsupported scheme %q", ErrInvalidURL, u.Scheme)
+	}
+
+	m.mu.RLock()
+	store := m.store
+	m.mu.RUnlock()
+
+	resolver, ok := store.(URLKeyResolver)
+	if !ok {
+		return "", ErrURLDeleteUnsupported
+	}
+
+	if !isHostAllowed(u.Host, resolver.AllowedHosts()) {
+		return "", fmt.Errorf("%w: host %q", ErrDomainNotAllowed, u.Host)
+	}
+
+	key, err := resolver.KeyFromURL(u)
+	if err != nil {
+		return "", err
+	}
+
+	return key, nil
+}
+
+// isHostAllowed 检查 host 是否在允许列表中（大小写不敏感）。
+func isHostAllowed(host string, allowed []string) bool {
+	for _, h := range allowed {
+		if equalFoldHost(host, h) {
+			return true
+		}
+	}
+	return false
+}
+
+// equalFoldHost 大小写不敏感比较两个 host。
+func equalFoldHost(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := 0; i < len(a); i++ {
+		ca, cb := a[i], b[i]
+		if ca >= 'A' && ca <= 'Z' {
+			ca += 'a' - 'A'
+		}
+		if cb >= 'A' && cb <= 'Z' {
+			cb += 'a' - 'A'
+		}
+		if ca != cb {
+			return false
+		}
+	}
+	return true
 }

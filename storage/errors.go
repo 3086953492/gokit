@@ -22,4 +22,13 @@ var (
 
 	// ErrInvalidConfig 表示配置无效。
 	ErrInvalidConfig = errors.New("storage: invalid configuration")
+
+	// ErrInvalidURL 表示提供的 URL 格式不合法或无法解析。
+	ErrInvalidURL = errors.New("storage: invalid url")
+
+	// ErrDomainNotAllowed 表示 URL 的域名不在当前 Store 允许范围内。
+	ErrDomainNotAllowed = errors.New("storage: domain not allowed")
+
+	// ErrURLDeleteUnsupported 表示当前 Store 不支持按 URL 删除。
+	ErrURLDeleteUnsupported = errors.New("storage: delete by url not supported")
 )

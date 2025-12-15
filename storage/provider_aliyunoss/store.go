@@ -330,3 +330,83 @@ func escapeKey(key string) string {
 	}
 	return strings.Join(parts, "/")
 }
+
+// ---------------------------------------------------------------------------
+// URLKeyResolver 接口实现（可选能力，用于 Manager.DeleteByURL）
+// ---------------------------------------------------------------------------
+
+// AllowedHosts 返回当前 Store 允许的域名列表（仅 host 部分，不含 scheme）。
+// 包含自定义域名（如配置）以及默认的 bucket.endpoint host。
+func (s *Store) AllowedHosts() []string {
+	hosts := make([]string, 0, 2)
+
+	// 默认 host：bucket.endpoint（endpoint 已规范化去除 scheme）
+	defaultHost := s.bucket + "." + normalizeEndpoint(s.endpoint)
+	hosts = append(hosts, defaultHost)
+
+	// 自定义域名（如配置）
+	if s.domain != "" {
+		customHost := extractHost(s.domain)
+		if customHost != "" && customHost != defaultHost {
+			hosts = append(hosts, customHost)
+		}
+	}
+
+	return hosts
+}
+
+// KeyFromURL 从已解析的 URL 提取对象 key。
+// 仅支持 objectURL() 生成的格式（/{escapedKey}）；返回的 key 已做 URL 解码。
+func (s *Store) KeyFromURL(u *url.URL) (string, error) {
+	path := u.Path
+	if path == "" || path == "/" {
+		return "", fmt.Errorf("%w: empty path", storage.ErrInvalidURL)
+	}
+
+	// 去除前导 /
+	if path[0] == '/' {
+		path = path[1:]
+	}
+
+	// 逐段解码
+	key, err := unescapeKey(path)
+	if err != nil {
+		return "", fmt.Errorf("%w: %v", storage.ErrInvalidURL, err)
+	}
+
+	if key == "" {
+		return "", fmt.Errorf("%w: empty key after decode", storage.ErrInvalidURL)
+	}
+
+	return key, nil
+}
+
+// extractHost 从带或不带 scheme 的域名字符串中提取 host 部分（不含端口）。
+func extractHost(domain string) string {
+	d := strings.TrimSpace(domain)
+	d = strings.TrimPrefix(d, "https://")
+	d = strings.TrimPrefix(d, "http://")
+	d = strings.TrimSuffix(d, "/")
+
+	// 去除端口（如有）
+	if idx := strings.LastIndex(d, ":"); idx != -1 {
+		// 确保不是 IPv6 地址中的冒号
+		if !strings.Contains(d, "[") {
+			d = d[:idx]
+		}
+	}
+	return d
+}
+
+// unescapeKey 对 URL 路径逐段解码，还原对象 key。
+func unescapeKey(escapedPath string) (string, error) {
+	parts := strings.Split(escapedPath, "/")
+	for i, p := range parts {
+		decoded, err := url.PathUnescape(p)
+		if err != nil {
+			return "", err
+		}
+		parts[i] = decoded
+	}
+	return strings.Join(parts, "/"), nil
+}
