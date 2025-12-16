@@ -2,48 +2,52 @@ package redis
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-// redisInstance 优雅地获取Redis实例
-func redisInstance() *Client {
-	return GetGlobalRedis()
+// DistributedLock 分布式锁实现
+type DistributedLock struct {
+	manager *Manager
+	key     string
+	value   string
+	expire  time.Duration
 }
 
-func NewDistributedLock(key string, expire time.Duration) *DistributedLock {
+// NewDistributedLock 创建一个新的分布式锁
+func (m *Manager) NewDistributedLock(key string, expire time.Duration) *DistributedLock {
 	return &DistributedLock{
-		client: redisInstance(),
-		key:    key,
-		value:  uuid.New().String(), // UUID
-		expire: expire,
+		manager: m,
+		key:     key,
+		value:   uuid.New().String(),
+		expire:  expire,
 	}
 }
 
-func (l *DistributedLock) Acquire() error {
-	ctx := context.Background()
-	result := l.client.SetNX(ctx, l.key, l.value, l.expire)
-	if result.Err() != nil {
-		return result.Err()
+// Acquire 尝试获取锁
+// 如果获取成功返回 nil，否则返回 ErrLockAcquireFailed 或其他错误
+func (l *DistributedLock) Acquire(ctx context.Context) error {
+	ok, err := l.manager.SetNX(ctx, l.key, l.value, l.expire)
+	if err != nil {
+		return err
 	}
-	if !result.Val() {
-		return fmt.Errorf("获取锁失败")
+	if !ok {
+		return ErrLockAcquireFailed
 	}
 	return nil
 }
 
-func (l *DistributedLock) Release() error {
-	// 使用Lua脚本保证原子性
+// Release 释放锁
+// 使用 Lua 脚本保证原子性，只有持有锁的进程才能释放
+func (l *DistributedLock) Release(ctx context.Context) error {
 	luaScript := `
-        if redis.call("get", KEYS[1]) == ARGV[1] then
-            return redis.call("del", KEYS[1])
-        else
-            return 0
-        end
-    `
-	ctx := context.Background()
-	result := l.client.Eval(ctx, luaScript, []string{l.key}, l.value)
-	return result.Err()
+		if redis.call("get", KEYS[1]) == ARGV[1] then
+			return redis.call("del", KEYS[1])
+		else
+			return 0
+		end
+	`
+	_, err := l.manager.Eval(ctx, luaScript, []string{l.key}, l.value)
+	return err
 }
