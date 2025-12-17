@@ -1,179 +1,138 @@
 package jwt
 
 import (
-	"sync"
-	"time"
-
-	"github.com/golang-jwt/jwt/v5"
-
-	"github.com/3086953492/gokit/config/types"
+	"context"
+	"fmt"
 )
 
-// Manager JWT管理器
+// Manager 提供 JWT 令牌的生成、解析与刷新功能。
+// Manager 是线程安全的，可在多个 goroutine 中共享使用。
 type Manager struct {
-	config types.AuthTokenConfig
+	opts *Options
 }
 
-// 全局JWT管理器
-var (
-	globalManager *Manager
-	initOnce      sync.Once
-	initErr       error
-)
+// NewManager 创建 JWT 管理器。
+// 必须通过 WithSecret 指定签名密钥，否则返回 ErrInvalidSecret。
+func NewManager(opts ...Option) (*Manager, error) {
+	o := defaultOptions()
+	for _, opt := range opts {
+		opt(o)
+	}
 
-// InitJWT 初始化JWT管理器
-// 此函数使用 sync.Once 保证只初始化一次
-func InitJWT(cfg types.AuthTokenConfig) error {
-	initOnce.Do(func() {
-		if cfg.Secret == "" {
-			initErr = ErrInvalidToken
-			return
-		}
-		globalManager = &Manager{
-			config: cfg,
-		}
-	})
-	return initErr
+	if o.Secret == "" {
+		return nil, ErrInvalidSecret
+	}
+
+	return &Manager{opts: o}, nil
 }
 
-// GetGlobalJWT 获取全局JWT管理器实例
-// 如果未初始化，返回 nil
-func GetGlobalJWT() *Manager {
-	return globalManager
-}
-
-// IsJWTInitialized 检查JWT管理器是否已初始化
-func IsJWTInitialized() bool {
-	return globalManager != nil
-}
-
-// GenerateToken 生成访问令牌
-// userID: 用户ID
+// GenerateAccessToken 生成访问令牌。
+// userID: 用户唯一标识
 // username: 用户名
-// extra: 额外的自定义字段
-func (m *Manager) GenerateToken(userID, username string, extra map[string]interface{}) (string, error) {
-	now := time.Now()
-	claims := Claims{
-		UserID:    userID,
-		Username:  username,
-		TokenType: AccessToken,
-		Extra:     extra,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    m.config.Issuer,
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(m.config.AccessExpire)),
-			NotBefore: jwt.NewNumericDate(now),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(m.config.Secret))
+// extra: 自定义扩展字段（如角色、权限等）
+func (m *Manager) GenerateAccessToken(userID, username string, extra map[string]any) (string, error) {
+	return generateToken(
+		m.opts.Secret,
+		m.opts.Issuer,
+		m.opts.AccessTTL,
+		AccessToken,
+		userID,
+		username,
+		extra,
+	)
 }
 
-// GenerateRefreshToken 生成刷新令牌
-// userID: 用户ID
+// GenerateRefreshToken 生成刷新令牌。
+// 刷新令牌仅包含 userID，不携带敏感信息。
 func (m *Manager) GenerateRefreshToken(userID string) (string, error) {
-	now := time.Now()
-	claims := Claims{
-		UserID:    userID,
-		TokenType: RefreshToken,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    m.config.Issuer,
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(m.config.RefreshExpire)),
-			NotBefore: jwt.NewNumericDate(now),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(m.config.Secret))
+	return generateToken(
+		m.opts.Secret,
+		m.opts.Issuer,
+		m.opts.RefreshTTL,
+		RefreshToken,
+		userID,
+		"",  // 不写入 username
+		nil, // 不写入 extra
+	)
 }
 
-// ParseToken 解析令牌并返回Claims
-func (m *Manager) ParseToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		// 验证签名方法
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, ErrInvalidToken
-		}
-		return []byte(m.config.Secret), nil
-	})
+// GenerateTokenPair 同时生成访问令牌和刷新令牌。
+// 返回 (accessToken, refreshToken, error)。
+func (m *Manager) GenerateTokenPair(userID, username string, extra map[string]any) (string, string, error) {
+	accessToken, err := m.GenerateAccessToken(userID, username, extra)
+	if err != nil {
+		return "", "", fmt.Errorf("generate access token: %w", err)
+	}
 
+	refreshToken, err := m.GenerateRefreshToken(userID)
+	if err != nil {
+		return "", "", fmt.Errorf("generate refresh token: %w", err)
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+// ParseToken 解析令牌并返回 Claims。
+// 支持解析 access 和 refresh 两种类型的令牌。
+func (m *Manager) ParseToken(tokenString string) (*Claims, error) {
+	return parseToken(tokenString, m.opts.Secret)
+}
+
+// ParseAccessToken 解析访问令牌，若令牌类型不是 access 则返回错误。
+func (m *Manager) ParseAccessToken(tokenString string) (*Claims, error) {
+	claims, err := m.ParseToken(tokenString)
 	if err != nil {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		return claims, nil
+	if claims.TokenType != AccessToken {
+		return nil, ErrInvalidTokenType
 	}
 
-	return nil, ErrInvalidToken
+	return claims, nil
 }
 
-// ValidateToken 验证令牌是否有效
+// ParseRefreshToken 解析刷新令牌，若令牌类型不是 refresh 则返回错误。
+func (m *Manager) ParseRefreshToken(tokenString string) (*Claims, error) {
+	claims, err := m.ParseToken(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	if claims.TokenType != RefreshToken {
+		return nil, ErrInvalidTokenType
+	}
+
+	return claims, nil
+}
+
+// ValidateToken 验证令牌是否有效。
 func (m *Manager) ValidateToken(tokenString string) error {
 	_, err := m.ParseToken(tokenString)
 	return err
 }
 
-// RefreshAccessToken 使用刷新令牌生成新的访问令牌
-func (m *Manager) RefreshAccessToken(refreshToken string) (string, error) {
+// RefreshAccessToken 使用刷新令牌生成新的访问令牌。
+// 此方法需要配置 ExtraResolver，用于根据 userID 加载最新的用户信息。
+// 若未配置 resolver，返回 ErrResolverNotConfigured。
+func (m *Manager) RefreshAccessToken(ctx context.Context, refreshToken string) (string, error) {
+	// 检查 resolver 是否已配置
+	if m.opts.Resolver == nil {
+		return "", ErrResolverNotConfigured
+	}
+
 	// 解析刷新令牌
-	claims, err := m.ParseToken(refreshToken)
+	claims, err := m.ParseRefreshToken(refreshToken)
 	if err != nil {
 		return "", err
 	}
 
-	// 验证令牌类型
-	if claims.TokenType != RefreshToken {
-		return "", ErrInvalidTokenType
+	// 通过 resolver 加载最新的用户信息
+	username, extra, err := m.opts.Resolver.ResolveExtra(ctx, claims.UserID)
+	if err != nil {
+		return "", fmt.Errorf("%w: %v", ErrResolveFailed, err)
 	}
 
 	// 生成新的访问令牌
-	return m.GenerateToken(claims.UserID, claims.Username, claims.Extra)
-}
-
-// GenerateToken 生成访问令牌（全局函数）
-func GenerateToken(userID, username string, extra map[string]interface{}) (string, error) {
-	m := GetGlobalJWT()
-	if m == nil {
-		return "", ErrJWTNotInitialized
-	}
-	return m.GenerateToken(userID, username, extra)
-}
-
-// GenerateRefreshToken 生成刷新令牌（全局函数）
-func GenerateRefreshToken(userID string) (string, error) {
-	m := GetGlobalJWT()
-	if m == nil {
-		return "", ErrJWTNotInitialized
-	}
-	return m.GenerateRefreshToken(userID)
-}
-
-// ParseToken 解析令牌（全局函数）
-func ParseToken(tokenString string) (*Claims, error) {
-	m := GetGlobalJWT()
-	if m == nil {
-		return nil, ErrJWTNotInitialized
-	}
-	return m.ParseToken(tokenString)
-}
-
-// ValidateToken 验证令牌（全局函数）
-func ValidateToken(tokenString string) error {
-	m := GetGlobalJWT()
-	if m == nil {
-		return ErrJWTNotInitialized
-	}
-	return m.ValidateToken(tokenString)
-}
-
-// RefreshAccessToken 刷新访问令牌（全局函数）
-func RefreshAccessToken(refreshToken string) (string, error) {
-	m := GetGlobalJWT()
-	if m == nil {
-		return "", ErrJWTNotInitialized
-	}
-	return m.RefreshAccessToken(refreshToken)
+	return m.GenerateAccessToken(claims.UserID, username, extra)
 }
