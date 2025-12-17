@@ -21,14 +21,29 @@
 package main
 
 import (
+    "context"
+    "log"
+
     "github.com/gin-gonic/gin"
-    "github.com/3086953492/gokit/response"
     "github.com/3086953492/gokit/config"
+    "github.com/3086953492/gokit/response"
 )
 
 func main() {
+    // 创建配置管理器
+    cfgMgr, err := config.NewManager(
+        config.WithConfigDir("./configs"),
+        config.WithMode("debug"), // 或从环境变量获取
+    )
+    if err != nil {
+        log.Fatalf("create config manager: %v", err)
+    }
+
     // 加载配置
-    cfg := config.GetGlobalConfig()
+    cfg, err := cfgMgr.Load(context.Background())
+    if err != nil {
+        log.Fatalf("load config: %v", err)
+    }
     
     // 初始化 response 包
     response.Init(

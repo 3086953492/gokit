@@ -71,13 +71,13 @@ func main() {
 package main
 
 import (
-    "github.com/3086953492/gokit/configs"
+    "github.com/3086953492/gokit/config/types"
     "github.com/3086953492/gokit/logger"
 )
 
 func main() {
     // 创建配置
-    config := configs.LogConfig{
+    logConfig := types.LogConfig{
         Level:       "info",
         Filename:    "logs/app.log",
         MaxSize:     100,    // 100MB
@@ -90,7 +90,7 @@ func main() {
     }
     
     // 使用配置初始化
-    err := logger.InitWithConfig(config)
+    err := logger.InitWithConfig(logConfig)
     if err != nil {
         panic(err)
     }
