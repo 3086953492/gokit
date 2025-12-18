@@ -31,12 +31,10 @@ func NewManager(opts ...Option) (*Manager, error) {
 
 	// 解析配置文件路径
 	configPath, err := resolve.ResolvePath(resolve.ResolveOptions{
-		ConfigFile:    options.ConfigFile,
-		ConfigDir:     options.ConfigDir,
-		EnvConfigKey:  options.EnvConfigKey,
-		Mode:          options.Mode,
-		ModeConfigMap: options.ModeConfigMap,
-		Formats:       options.Formats,
+		ConfigFile:   options.ConfigFile,
+		ConfigDir:    options.ConfigDir,
+		EnvConfigKey: options.EnvConfigKey,
+		Formats:      options.Formats,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrConfigNotFound, err)

@@ -17,12 +17,6 @@ type Options struct {
 	// EnvConfigKey 从环境变量读取配置文件路径的 key（默认 "CONFIG"）
 	EnvConfigKey string
 
-	// Mode 运行模式（如 "debug"、"test"、"release"）
-	Mode string
-
-	// ModeConfigMap 模式到配置文件名的映射
-	ModeConfigMap map[string]string
-
 	// Formats 支持的配置文件格式（默认 ["yaml", "json"]）
 	Formats []string
 
@@ -38,13 +32,8 @@ func DefaultOptions() *Options {
 	return &Options{
 		ConfigDir:    ".",
 		EnvConfigKey: "CONFIG",
-		ModeConfigMap: map[string]string{
-			"debug":   "config.yaml",
-			"test":    "config.test.yaml",
-			"release": "config.release.yaml",
-		},
-		Formats: []string{"yaml", "json"},
-		Logger:  noopLogger{},
+		Formats:      []string{"yaml", "json"},
+		Logger:       noopLogger{},
 	}
 }
 
@@ -69,20 +58,6 @@ func WithEnvConfigKey(key string) Option {
 	}
 }
 
-// WithMode 设置运行模式
-func WithMode(mode string) Option {
-	return func(o *Options) {
-		o.Mode = mode
-	}
-}
-
-// WithModeConfigMap 设置模式到配置文件名的映射
-func WithModeConfigMap(m map[string]string) Option {
-	return func(o *Options) {
-		o.ModeConfigMap = m
-	}
-}
-
 // WithFormats 设置支持的配置文件格式
 func WithFormats(formats []string) Option {
 	return func(o *Options) {
@@ -102,4 +77,3 @@ type noopLogger struct{}
 
 func (noopLogger) Info(msg string, args ...any)  {}
 func (noopLogger) Error(msg string, args ...any) {}
-

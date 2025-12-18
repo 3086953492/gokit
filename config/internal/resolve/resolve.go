@@ -17,18 +17,12 @@ type ResolveOptions struct {
 	// EnvConfigKey 从环境变量读取配置文件路径的 key
 	EnvConfigKey string
 
-	// Mode 运行模式
-	Mode string
-
-	// ModeConfigMap 模式到配置文件名的映射
-	ModeConfigMap map[string]string
-
 	// Formats 支持的配置文件格式
 	Formats []string
 }
 
 // ResolvePath 按优先级解析配置文件路径
-// 优先级：显式路径 > 环境变量 > mode 映射 > 默认目录探测
+// 优先级：显式路径 > 环境变量 > 默认目录探测
 func ResolvePath(opts ResolveOptions) (string, error) {
 	// 1. 显式指定的配置文件路径（最高优先级）
 	if opts.ConfigFile != "" {
@@ -47,17 +41,7 @@ func ResolvePath(opts ResolveOptions) (string, error) {
 		}
 	}
 
-	// 3. 根据 mode 映射到配置文件名
-	if opts.Mode != "" && opts.ModeConfigMap != nil {
-		if configName, exists := opts.ModeConfigMap[opts.Mode]; exists {
-			modePath := filepath.Join(opts.ConfigDir, configName)
-			if _, err := os.Stat(modePath); err == nil {
-				return modePath, nil
-			}
-		}
-	}
-
-	// 4. 在目录下按格式探测默认配置文件
+	// 3. 在目录下按格式探测默认配置文件（默认 yaml -> json）
 	for _, format := range opts.Formats {
 		defaultPath := filepath.Join(opts.ConfigDir, "config."+format)
 		if _, err := os.Stat(defaultPath); err == nil {
