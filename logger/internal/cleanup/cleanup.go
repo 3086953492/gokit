@@ -1,4 +1,5 @@
-package logger
+// Package cleanup 提供日志文件清理功能
+package cleanup
 
 import (
 	"os"
@@ -9,12 +10,12 @@ import (
 )
 
 // CleanupOldLogs 清理过期的日志文件
+// 根据 maxAge（天数）和 maxBackups（最大备份数）删除旧日志
 func CleanupOldLogs(filename string, maxAge, maxBackups int) error {
 	dir := filepath.Dir(filename)
 	ext := filepath.Ext(filename)
 	base := filepath.Base(filename[:len(filename)-len(ext)])
 
-	// 读取目录中的所有文件
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return err
@@ -22,22 +23,22 @@ func CleanupOldLogs(filename string, maxAge, maxBackups int) error {
 
 	var logFiles []os.FileInfo
 
-	// 筛选出相关的日志文件
+	// 筛选出相关的日志文件：basename-YYYY-MM-DD.ext 或 .gz
 	for _, file := range files {
 		if file.IsDir() {
 			continue
 		}
 
 		name := file.Name()
-		// 匹配格式：basename-YYYY-MM-DD.ext 或 basename-YYYY-MM-DD.ext.gz
-		if strings.HasPrefix(name, base+"-") && (strings.HasSuffix(name, ext) || strings.HasSuffix(name, ext+".gz")) {
+		if strings.HasPrefix(name, base+"-") &&
+			(strings.HasSuffix(name, ext) || strings.HasSuffix(name, ext+".gz")) {
 			if info, err := file.Info(); err == nil {
 				logFiles = append(logFiles, info)
 			}
 		}
 	}
 
-	// 按修改时间排序（最新的在前面）
+	// 按修改时间排序（最新的在前）
 	sort.Slice(logFiles, func(i, j int) bool {
 		return logFiles[i].ModTime().After(logFiles[j].ModTime())
 	})
@@ -64,3 +65,4 @@ func CleanupOldLogs(filename string, maxAge, maxBackups int) error {
 
 	return nil
 }
+
