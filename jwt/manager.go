@@ -11,6 +11,26 @@ type Manager struct {
 	opts *Options
 }
 
+// SetExtraResolver 设置刷新时加载用户信息的回调。
+// 支持在 Manager 创建后延迟设置，用于解决循环依赖问题。
+//
+// 典型用法：
+//
+//	// 1. 先创建 jwtMgr（不带 resolver）
+//	jwtMgr, _ := jwt.NewManager(jwt.WithSecret(cfg.Secret))
+//
+//	// 2. 注册到容器
+//	container.Register(jwtMgr)
+//
+//	// 3. 创建依赖 jwtMgr 的服务
+//	userService := NewUserService(jwtMgr, userRepo)
+//
+//	// 4. 延迟注入 resolver
+//	jwtMgr.SetExtraResolver(userService)
+func (m *Manager) SetExtraResolver(resolver ExtraResolver) {
+	m.opts.Resolver = resolver
+}
+
 // NewManager 创建 JWT 管理器。
 // 必须通过 WithSecret 指定签名密钥，否则返回 ErrInvalidSecret。
 func NewManager(opts ...Option) (*Manager, error) {
