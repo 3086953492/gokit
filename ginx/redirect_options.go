@@ -4,7 +4,8 @@ import "net/http"
 
 // RedirectOptions 重定向配置
 type RedirectOptions struct {
-	Status int // HTTP 状态码，默认 302
+	Status int               // HTTP 状态码，默认 302
+	Query  map[string]string // 附加 query 参数（同名 key 覆盖原有）
 }
 
 func defaultRedirectOptions() *RedirectOptions {
@@ -22,5 +23,12 @@ func WithRedirectStatus(status int) RedirectOption {
 		if status >= 300 && status < 400 {
 			o.Status = status
 		}
+	}
+}
+
+// WithRedirectQuery 设置附加的 query 参数，同名 key 会覆盖原有值
+func WithRedirectQuery(q map[string]string) RedirectOption {
+	return func(o *RedirectOptions) {
+		o.Query = q
 	}
 }
