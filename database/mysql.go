@@ -1,13 +1,9 @@
 package database
 
-import (
-	"fmt"
-
-	"github.com/3086953492/gokit/config/types"
-)
+import "fmt"
 
 // BuildMySQLDSN 构建MySQL DSN
-func BuildMySQLDSN(cfg types.DatabaseConfig) string {
+func BuildMySQLDSN(cfg MySQLConfig) string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",
 		cfg.User,
 		cfg.Password,
