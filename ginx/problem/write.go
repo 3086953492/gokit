@@ -1,21 +1,17 @@
-package ginx
+package problem
 
 import (
 	"github.com/gin-gonic/gin"
 )
 
-// ---------------------------------------------------------------------------
-// Fail：直接输出 RFC 7807 Problem Details
-// ---------------------------------------------------------------------------
-
 // Fail 输出 RFC 7807 Problem Details 响应。
 //
-// 调用方显式传入 status/title/detail/ptype，ginx 只负责组装并输出。
+// 调用方显式传入 status/title/detail/ptype，problem 只负责组装并输出。
 //
-//	ginx.Fail(c, 403, "Forbidden", "no permission", "https://api.example.com/errors/forbidden")
-//	ginx.Fail(c, 400, "Bad Request", "invalid params", "") // ptype 为空则使用 "about:blank"
-func Fail(c *gin.Context, status int, title, detail, ptype string, opts ...FailOption) {
-	o := defaultFailOptions()
+//	problem.Fail(c, 403, "Forbidden", "no permission", "https://api.example.com/errors/forbidden")
+//	problem.Fail(c, 400, "Bad Request", "invalid params", "") // ptype 为空则使用 "about:blank"
+func Fail(c *gin.Context, status int, title, detail, ptype string, opts ...Option) {
+	o := defaultOptions()
 	for _, fn := range opts {
 		fn(o)
 	}
@@ -36,7 +32,7 @@ func Fail(c *gin.Context, status int, title, detail, ptype string, opts ...FailO
 }
 
 // writeProblem 写入 Problem 响应（header + body）
-func writeProblem(c *gin.Context, p *Problem, o *FailOptions) {
+func writeProblem(c *gin.Context, p *Problem, o *Options) {
 	if o.Instance != "" {
 		p.Instance = o.Instance
 	} else {
@@ -55,11 +51,12 @@ func writeProblem(c *gin.Context, p *Problem, o *FailOptions) {
 		for k, v := range p.Extensions {
 			body[k] = v
 		}
-		c.Header("Content-Type", ContentTypeProblem)
+		c.Header("Content-Type", ContentType)
 		c.JSON(p.Status, body)
 		return
 	}
 
-	c.Header("Content-Type", ContentTypeProblem)
+	c.Header("Content-Type", ContentType)
 	c.JSON(p.Status, p)
 }
+

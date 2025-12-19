@@ -1,4 +1,4 @@
-package ginx
+package pagination
 
 import (
 	"strconv"
@@ -6,11 +6,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ParsePage 从 *gin.Context 解析分页参数并归一化。
+// Parse 从 *gin.Context 解析分页参数并归一化。
 //
-// 默认 page=1, page_size=10, 最大 page_size=100。可通过 PageOption 覆盖。
-func ParsePage(c *gin.Context, opts ...PageOption) Page {
-	o := defaultPageOptions()
+// 默认 page=1, page_size=10, 最大 page_size=100。可通过 Option 覆盖。
+//
+//	p := pagination.Parse(c)
+//	p := pagination.Parse(c, pagination.WithMaxPageSize(50))
+func Parse(c *gin.Context, opts ...Option) Page {
+	o := defaultOptions()
 	for _, fn := range opts {
 		fn(o)
 	}
