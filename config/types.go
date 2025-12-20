@@ -11,8 +11,8 @@ type Config struct {
 	OAuth      types.OAuthConfig      `json:"oauth" yaml:"oauth" mapstructure:"oauth"`
 	Log        types.LogConfig        `json:"log" yaml:"log" mapstructure:"log"`
 	Middleware types.MiddlewareConfig `json:"middleware" yaml:"middleware" mapstructure:"middleware"`
-	Casdoor    types.CasdoorConfig    `json:"casdoor" yaml:"casdoor" mapstructure:"casdoor"`
 	AliyunOSS  types.AliyunOSSConfig  `json:"aliyun_oss" yaml:"aliyun_oss" mapstructure:"aliyun_oss"`
+	Goauth     types.GoauthConfig     `json:"goauth" yaml:"goauth" mapstructure:"goauth"`
 }
 
 // Validate 验证配置，调用子配置的 Validate 方法
@@ -43,4 +43,3 @@ func DefaultConfig() Config {
 		Log: types.DefaultConfig(),
 	}
 }
-

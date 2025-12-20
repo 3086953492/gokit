@@ -60,19 +60,16 @@ middleware:
     allow_headers:
       - Authorization
 
-casdoor:
-  host: http://localhost:8000
-  client:
-    endpoint: http://localhost:8000
-    client_id: clientId
-    client_secret: clientSecret
-    certificate: certificate
-    organization_name: organizationName
-    application_name: applicationName
-
 aliyun_oss:
   access_key_id: your-access-key-id
   access_key_secret: your-access-key-secret
   endpoint: oss-cn-hangzhou.aliyuncs.com
   bucket: my-bucket
   domain: https://cdn.example.com
+
+goauth:
+  frontend_base_url: http://goauthfrontend.com
+  backend_base_url: http://goauthbackend.com
+  client_id: your-client-id
+  client_secret: your-client-secret
+  redirect_uri: http://yourapp.com/auth/callback
