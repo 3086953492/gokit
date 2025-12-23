@@ -7,6 +7,12 @@ var (
 	// ErrInvalidSecret 表示提供的签名密钥为空或无效。
 	ErrInvalidSecret = errors.New("jwt: invalid secret")
 
+	// ErrAccessSecretNotConfigured 表示未配置访问令牌密钥。
+	ErrAccessSecretNotConfigured = errors.New("jwt: access secret not configured")
+
+	// ErrRefreshSecretNotConfigured 表示未配置刷新令牌密钥。
+	ErrRefreshSecretNotConfigured = errors.New("jwt: refresh secret not configured")
+
 	// ErrInvalidToken 表示令牌格式不正确或签名验证失败。
 	ErrInvalidToken = errors.New("jwt: invalid token")
 

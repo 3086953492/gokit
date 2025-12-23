@@ -19,8 +19,12 @@ const (
 
 // Options 包含 Manager 的配置参数。
 type Options struct {
-	// Secret 签名密钥，必填。
-	Secret string
+	// AccessSecret 访问令牌签名密钥，必填。
+	AccessSecret string
+
+	// RefreshSecret 刷新令牌签名密钥，必填。
+	// 建议与 AccessSecret 使用不同的密钥以增强安全性。
+	RefreshSecret string
 
 	// Issuer 令牌签发者。
 	Issuer string
@@ -48,10 +52,26 @@ func defaultOptions() *Options {
 	}
 }
 
-// WithSecret 设置签名密钥。
+// WithAccessSecret 设置访问令牌签名密钥。
+func WithAccessSecret(secret string) Option {
+	return func(o *Options) {
+		o.AccessSecret = secret
+	}
+}
+
+// WithRefreshSecret 设置刷新令牌签名密钥。
+func WithRefreshSecret(secret string) Option {
+	return func(o *Options) {
+		o.RefreshSecret = secret
+	}
+}
+
+// WithSecret 同时设置访问令牌和刷新令牌的签名密钥。
+// 如需使用不同密钥，请分别调用 WithAccessSecret 和 WithRefreshSecret。
 func WithSecret(secret string) Option {
 	return func(o *Options) {
-		o.Secret = secret
+		o.AccessSecret = secret
+		o.RefreshSecret = secret
 	}
 }
 
@@ -89,4 +109,3 @@ func WithExtraResolverFunc(fn func(ctx context.Context, userID string) (string, 
 		o.Resolver = ExtraResolverFunc(fn)
 	}
 }
-

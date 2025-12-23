@@ -32,14 +32,20 @@ func (m *Manager) SetExtraResolver(resolver ExtraResolver) {
 }
 
 // NewManager 创建 JWT 管理器。
-// 必须通过 WithSecret 指定签名密钥，否则返回 ErrInvalidSecret。
+//
+// 至少需要配置 AccessSecret 或 RefreshSecret 中的一个：
+//   - 仅配置 AccessSecret：可生成/解析访问令牌
+//   - 仅配置 RefreshSecret：可生成/解析刷新令牌
+//   - 同时配置两者：完整功能
+//
+// 可通过 WithSecret 同时设置两者，或分别使用 WithAccessSecret 和 WithRefreshSecret。
 func NewManager(opts ...Option) (*Manager, error) {
 	o := defaultOptions()
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	if o.Secret == "" {
+	if o.AccessSecret == "" && o.RefreshSecret == "" {
 		return nil, ErrInvalidSecret
 	}
 
@@ -50,9 +56,14 @@ func NewManager(opts ...Option) (*Manager, error) {
 // userID: 用户唯一标识
 // username: 用户名
 // extra: 自定义扩展字段（如角色、权限等）
+//
+// 若未配置 AccessSecret，返回 ErrAccessSecretNotConfigured。
 func (m *Manager) GenerateAccessToken(userID, username string, extra map[string]any) (string, error) {
+	if m.opts.AccessSecret == "" {
+		return "", ErrAccessSecretNotConfigured
+	}
 	return generateToken(
-		m.opts.Secret,
+		m.opts.AccessSecret,
 		m.opts.Issuer,
 		m.opts.AccessTTL,
 		AccessToken,
@@ -64,9 +75,14 @@ func (m *Manager) GenerateAccessToken(userID, username string, extra map[string]
 
 // GenerateRefreshToken 生成刷新令牌。
 // 刷新令牌仅包含 userID，不携带敏感信息。
+//
+// 若未配置 RefreshSecret，返回 ErrRefreshSecretNotConfigured。
 func (m *Manager) GenerateRefreshToken(userID string) (string, error) {
+	if m.opts.RefreshSecret == "" {
+		return "", ErrRefreshSecretNotConfigured
+	}
 	return generateToken(
-		m.opts.Secret,
+		m.opts.RefreshSecret,
 		m.opts.Issuer,
 		m.opts.RefreshTTL,
 		RefreshToken,
@@ -92,15 +108,45 @@ func (m *Manager) GenerateTokenPair(userID, username string, extra map[string]an
 	return accessToken, refreshToken, nil
 }
 
-// ParseToken 解析令牌并返回 Claims。
-// 支持解析 access 和 refresh 两种类型的令牌。
+// ParseToken 尝试解析令牌并返回 Claims。
+// 根据已配置的密钥尝试解析，优先使用 AccessSecret。
+// 推荐使用 ParseAccessToken 或 ParseRefreshToken 以明确令牌类型。
 func (m *Manager) ParseToken(tokenString string) (*Claims, error) {
-	return parseToken(tokenString, m.opts.Secret)
+	var lastErr error
+
+	// 尝试用 AccessSecret 解析
+	if m.opts.AccessSecret != "" {
+		claims, err := parseToken(tokenString, m.opts.AccessSecret)
+		if err == nil {
+			return claims, nil
+		}
+		lastErr = err
+	}
+
+	// 若 RefreshSecret 存在且与 AccessSecret 不同，尝试解析
+	if m.opts.RefreshSecret != "" && m.opts.RefreshSecret != m.opts.AccessSecret {
+		claims, err := parseToken(tokenString, m.opts.RefreshSecret)
+		if err == nil {
+			return claims, nil
+		}
+		lastErr = err
+	}
+
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, ErrInvalidToken
 }
 
 // ParseAccessToken 解析访问令牌，若令牌类型不是 access 则返回错误。
+//
+// 若未配置 AccessSecret，返回 ErrAccessSecretNotConfigured。
 func (m *Manager) ParseAccessToken(tokenString string) (*Claims, error) {
-	claims, err := m.ParseToken(tokenString)
+	if m.opts.AccessSecret == "" {
+		return nil, ErrAccessSecretNotConfigured
+	}
+
+	claims, err := parseToken(tokenString, m.opts.AccessSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +159,14 @@ func (m *Manager) ParseAccessToken(tokenString string) (*Claims, error) {
 }
 
 // ParseRefreshToken 解析刷新令牌，若令牌类型不是 refresh 则返回错误。
+//
+// 若未配置 RefreshSecret，返回 ErrRefreshSecretNotConfigured。
 func (m *Manager) ParseRefreshToken(tokenString string) (*Claims, error) {
-	claims, err := m.ParseToken(tokenString)
+	if m.opts.RefreshSecret == "" {
+		return nil, ErrRefreshSecretNotConfigured
+	}
+
+	claims, err := parseToken(tokenString, m.opts.RefreshSecret)
 	if err != nil {
 		return nil, err
 	}
