@@ -32,7 +32,12 @@
     "secret": "exampleoauthkey",
     "auth_code_expire": "10m",
     "access_token_expire": "1h",
-    "refresh_token_expire": "168h"
+    "refresh_token_expire": "168h",
+    "subject": {
+      "secret": "your-subject-secret-at-least-32-bytes",
+      "length": 0,
+      "prefix": ""
+    }
   },
   "log": {
     "level": "info",

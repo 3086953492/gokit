@@ -31,6 +31,14 @@ oauth:
   auth_code_expire: 10m
   access_token_expire: 1h
   refresh_token_expire: 168h
+  # OIDC Subject 配置（用于生成用户的 sub 标识符）
+  subject:
+    # HMAC 密钥，必须至少 32 字节，长期稳定不可变更
+    secret: "your-subject-secret-at-least-32-bytes"
+    # sub 长度（不含前缀），0 表示不截断，默认 43
+    length: 0
+    # sub 前缀，例如 "u_"
+    prefix: ""
 
 log:
   level: info
