@@ -4,8 +4,9 @@ import "time"
 
 // AuthTokenConfig 认证令牌配置
 type AuthTokenConfig struct {
-	Secret        string        `json:"secret" yaml:"secret" mapstructure:"secret"`
-	AccessExpire  time.Duration `json:"access_expire" yaml:"access_expire" mapstructure:"access_expire"`
-	RefreshExpire time.Duration `json:"refresh_expire" yaml:"refresh_expire" mapstructure:"refresh_expire"`
-	Issuer        string        `json:"issuer" yaml:"issuer" mapstructure:"issuer"`
+	AccessTokenSecret  string        `json:"access_token_secret" yaml:"access_token_secret" mapstructure:"access_token_secret"`
+	AccessTokenExpire  time.Duration `json:"access_token_expire" yaml:"access_token_expire" mapstructure:"access_token_expire"`
+	RefreshTokenSecret string        `json:"refresh_token_secret" yaml:"refresh_token_secret" mapstructure:"refresh_token_secret"`
+	RefreshTokenExpire time.Duration `json:"refresh_token_expire" yaml:"refresh_token_expire" mapstructure:"refresh_token_expire"`
+	Issuer             string        `json:"issuer" yaml:"issuer" mapstructure:"issuer"`
 }

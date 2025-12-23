@@ -21,9 +21,10 @@ redis:
   db: 0
 
 auth_token:
-  secret: "exampleauthkey"
-  access_expire: 1h
-  refresh_expire: 24h
+  access_token_secret: "exampleauthkey"
+  access_token_expire: 1h
+  refresh_token_secret: "examplerefreshkey"
+  refresh_token_expire: 24h
   issuer: "example.com"
 
 log:
