@@ -53,12 +53,11 @@ func NewManager(opts ...Option) (*Manager, error) {
 }
 
 // GenerateAccessToken 生成访问令牌。
-// userID: 用户唯一标识
-// username: 用户名
+// subject: 用户唯一标识（对应 JWT 标准的 sub 字段）
 // extra: 自定义扩展字段（如角色、权限等）
 //
 // 若未配置 AccessSecret，返回 ErrAccessSecretNotConfigured。
-func (m *Manager) GenerateAccessToken(userID, username string, extra map[string]any) (string, error) {
+func (m *Manager) GenerateAccessToken(subject string, extra map[string]any) (string, error) {
 	if m.opts.AccessSecret == "" {
 		return "", ErrAccessSecretNotConfigured
 	}
@@ -67,17 +66,16 @@ func (m *Manager) GenerateAccessToken(userID, username string, extra map[string]
 		m.opts.Issuer,
 		m.opts.AccessTTL,
 		AccessToken,
-		userID,
-		username,
+		subject,
 		extra,
 	)
 }
 
 // GenerateRefreshToken 生成刷新令牌。
-// 刷新令牌仅包含 userID，不携带敏感信息。
+// 刷新令牌仅包含 subject，不携带扩展信息。
 //
 // 若未配置 RefreshSecret，返回 ErrRefreshSecretNotConfigured。
-func (m *Manager) GenerateRefreshToken(userID string) (string, error) {
+func (m *Manager) GenerateRefreshToken(subject string) (string, error) {
 	if m.opts.RefreshSecret == "" {
 		return "", ErrRefreshSecretNotConfigured
 	}
@@ -86,21 +84,20 @@ func (m *Manager) GenerateRefreshToken(userID string) (string, error) {
 		m.opts.Issuer,
 		m.opts.RefreshTTL,
 		RefreshToken,
-		userID,
-		"",  // 不写入 username
+		subject,
 		nil, // 不写入 extra
 	)
 }
 
 // GenerateTokenPair 同时生成访问令牌和刷新令牌。
 // 返回 (accessToken, refreshToken, error)。
-func (m *Manager) GenerateTokenPair(userID, username string, extra map[string]any) (string, string, error) {
-	accessToken, err := m.GenerateAccessToken(userID, username, extra)
+func (m *Manager) GenerateTokenPair(subject string, extra map[string]any) (string, string, error) {
+	accessToken, err := m.GenerateAccessToken(subject, extra)
 	if err != nil {
 		return "", "", fmt.Errorf("generate access token: %w", err)
 	}
 
-	refreshToken, err := m.GenerateRefreshToken(userID)
+	refreshToken, err := m.GenerateRefreshToken(subject)
 	if err != nil {
 		return "", "", fmt.Errorf("generate refresh token: %w", err)
 	}
@@ -185,7 +182,7 @@ func (m *Manager) ValidateToken(tokenString string) error {
 }
 
 // RefreshAccessToken 使用刷新令牌生成新的访问令牌。
-// 此方法需要配置 ExtraResolver，用于根据 userID 加载最新的用户信息。
+// 此方法需要配置 ExtraResolver，用于根据 subject 加载最新的扩展信息。
 // 若未配置 resolver，返回 ErrResolverNotConfigured。
 func (m *Manager) RefreshAccessToken(ctx context.Context, refreshToken string) (string, error) {
 	// 检查 resolver 是否已配置
@@ -199,12 +196,15 @@ func (m *Manager) RefreshAccessToken(ctx context.Context, refreshToken string) (
 		return "", err
 	}
 
-	// 通过 resolver 加载最新的用户信息
-	username, extra, err := m.opts.Resolver.ResolveExtra(ctx, claims.UserID)
+	// 获取 subject
+	subject := claims.Subject
+
+	// 通过 resolver 加载最新的扩展信息
+	extra, err := m.opts.Resolver.ResolveExtra(ctx, subject)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", ErrResolveFailed, err)
 	}
 
 	// 生成新的访问令牌
-	return m.GenerateAccessToken(claims.UserID, username, extra)
+	return m.GenerateAccessToken(subject, extra)
 }

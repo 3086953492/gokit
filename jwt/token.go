@@ -14,18 +14,16 @@ func generateToken(
 	issuer string,
 	ttl time.Duration,
 	tokenType TokenType,
-	userID string,
-	username string,
+	subject string,
 	extra map[string]any,
 ) (string, error) {
 	now := time.Now()
 
 	claims := Claims{
-		UserID:    userID,
-		Username:  username,
 		TokenType: tokenType,
 		Extra:     extra,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   subject,
 			Issuer:    issuer,
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
@@ -62,4 +60,3 @@ func parseToken(tokenString, secret string) (*Claims, error) {
 
 	return claims, nil
 }
-
