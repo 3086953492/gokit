@@ -104,7 +104,7 @@ func WithExtraResolver(resolver ExtraResolver) Option {
 }
 
 // WithExtraResolverFunc 使用函数作为 ExtraResolver。
-func WithExtraResolverFunc(fn func(ctx context.Context, userID string) (string, map[string]any, error)) Option {
+func WithExtraResolverFunc(fn func(ctx context.Context, subject string) (map[string]any, error)) Option {
 	return func(o *Options) {
 		o.Resolver = ExtraResolverFunc(fn)
 	}
