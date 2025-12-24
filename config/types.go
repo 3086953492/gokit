@@ -12,6 +12,7 @@ type Config struct {
 	Middleware types.MiddlewareConfig `json:"middleware" yaml:"middleware" mapstructure:"middleware"`
 	AliyunOSS  types.AliyunOSSConfig  `json:"aliyun_oss" yaml:"aliyun_oss" mapstructure:"aliyun_oss"`
 	Goauth     types.GoauthConfig     `json:"goauth" yaml:"goauth" mapstructure:"goauth"`
+	Subject    types.SubjectConfig    `json:"subject" yaml:"subject" mapstructure:"subject"`
 }
 
 // Validate 验证配置，调用子配置的 Validate 方法

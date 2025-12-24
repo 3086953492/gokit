@@ -68,3 +68,8 @@ goauth:
   client_id: your-client-id
   client_secret: your-client-secret
   redirect_uri: http://yourapp.com/auth/callback
+
+subject:
+  secret: examplesecret
+  length: 0
+  prefix: ""
