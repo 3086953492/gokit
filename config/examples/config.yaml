@@ -4,6 +4,7 @@ server:
   frontend_url: http://localhost:5173
   mode: debug
   id: 1
+  domain: localhost
 database:
   host: localhost
   port: 3306
