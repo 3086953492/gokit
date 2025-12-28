@@ -33,9 +33,10 @@ func ValidateFormFile(ctx *gin.Context, fieldName string, maxSize int64, allowed
 	}
 
 	return &FormFileResult{
-		FileHeader:  fh,
-		Filename:    generateUniqueFilename(fh.Filename),
-		ContentType: contentType,
+		FileHeader:   fh,
+		OriginalName: fh.Filename,
+		Filename:     generateUniqueFilename(fh.Filename),
+		ContentType:  contentType,
 	}, nil
 }
 
