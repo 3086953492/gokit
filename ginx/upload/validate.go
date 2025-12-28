@@ -28,7 +28,7 @@ func ValidateFormFile(ctx *gin.Context, fieldName string, maxSize int64, allowed
 	}
 
 	contentType := fh.Header.Get("Content-Type")
-	if !slices.Contains(allowedTypes, contentType) {
+	if len(allowedTypes) > 0 && !slices.Contains(allowedTypes, contentType) {
 		return nil, errors.New("文件格式错误")
 	}
 
