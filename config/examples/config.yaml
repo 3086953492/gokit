@@ -56,12 +56,19 @@ middleware:
     allow_headers:
       - Authorization
 
-aliyun_oss:
-  access_key_id: your-access-key-id
-  access_key_secret: your-access-key-secret
-  endpoint: oss-cn-hangzhou.aliyuncs.com
-  bucket: my-bucket
-  domain: https://cdn.example.com
+storage:
+  provider: aliyun_oss
+  aliyun_oss:
+    access_key_id: your-access-key-id
+    access_key_secret: your-access-key-secret
+    endpoint: oss-cn-hangzhou.aliyuncs.com
+    bucket: my-bucket
+    domain: https://cdn.example.com
+  # local:
+  #   root: ./uploads
+  #   base_url: http://localhost:8080/files
+  #   dir_perm: 493
+  #   file_perm: 420
 
 goauth:
   frontend_base_url: http://goauthfrontend.com

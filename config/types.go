@@ -10,7 +10,7 @@ type Config struct {
 	AuthToken  types.AuthTokenConfig  `json:"auth_token" yaml:"auth_token" mapstructure:"auth_token"`
 	Log        types.LogConfig        `json:"log" yaml:"log" mapstructure:"log"`
 	Middleware types.MiddlewareConfig `json:"middleware" yaml:"middleware" mapstructure:"middleware"`
-	AliyunOSS  types.AliyunOSSConfig  `json:"aliyun_oss" yaml:"aliyun_oss" mapstructure:"aliyun_oss"`
+	Storage    types.StorageConfig    `json:"storage" yaml:"storage" mapstructure:"storage"`
 	Goauth     types.GoauthConfig     `json:"goauth" yaml:"goauth" mapstructure:"goauth"`
 	Subject    types.SubjectConfig    `json:"subject" yaml:"subject" mapstructure:"subject"`
 }
@@ -18,6 +18,9 @@ type Config struct {
 // Validate 验证配置，调用子配置的 Validate 方法
 func (c *Config) Validate() error {
 	if err := c.Log.Validate(); err != nil {
+		return err
+	}
+	if err := c.Storage.Validate(); err != nil {
 		return err
 	}
 	return nil
