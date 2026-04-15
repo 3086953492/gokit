@@ -306,7 +306,7 @@ func (s *urlStore) KeyFromURL(u *url.URL) (string, error) {
 		pathValue = strings.TrimPrefix(pathValue, "/")
 	}
 
-	key, err := unescapeKey(pathValue)
+	key, err := storage.UnescapeKey(pathValue)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", storage.ErrInvalidURL, err)
 	}
@@ -334,7 +334,7 @@ func (s *Store) newObjectMeta(key string, info os.FileInfo, size int64, contentT
 }
 
 func (s *Store) objectURL(key string) string {
-	return s.baseURL + "/" + escapeKey(key)
+	return s.baseURL + "/" + storage.EscapeKey(key)
 }
 
 func (s *Store) resolveKeyPath(key string) (string, error) {
@@ -567,25 +567,27 @@ func wrapPathError(action string, err error) error {
 
 func applyListDefaults(opts *storage.ListOptions) *storage.ListOptions {
 	if opts == nil {
-		return &storage.ListOptions{MaxKeys: 1000}
+		return &storage.ListOptions{MaxKeys: storage.DefaultMaxKeys}
 	}
 
 	cloned := *opts
 	if cloned.MaxKeys <= 0 {
-		cloned.MaxKeys = 1000
+		cloned.MaxKeys = storage.DefaultMaxKeys
 	}
 	return &cloned
 }
 
 func parseRange(raw string, size int64) (offset int64, length int64, err error) {
+	rangeErr := func() error { return fmt.Errorf("%w: %q", storage.ErrInvalidRange, raw) }
+
 	const prefix = "bytes="
 	if !strings.HasPrefix(raw, prefix) {
-		return 0, 0, fmt.Errorf("storage: invalid range %q", raw)
+		return 0, 0, rangeErr()
 	}
 
 	spec := strings.TrimPrefix(raw, prefix)
 	if strings.Count(spec, "-") != 1 {
-		return 0, 0, fmt.Errorf("storage: invalid range %q", raw)
+		return 0, 0, rangeErr()
 	}
 
 	parts := strings.SplitN(spec, "-", 2)
@@ -594,11 +596,11 @@ func parseRange(raw string, size int64) (offset int64, length int64, err error) 
 
 	switch {
 	case startPart == "" && endPart == "":
-		return 0, 0, fmt.Errorf("storage: invalid range %q", raw)
+		return 0, 0, rangeErr()
 	case startPart == "":
 		lastBytes, err := strconv.ParseInt(endPart, 10, 64)
 		if err != nil || lastBytes <= 0 {
-			return 0, 0, fmt.Errorf("storage: invalid range %q", raw)
+			return 0, 0, rangeErr()
 		}
 		if lastBytes > size {
 			lastBytes = size
@@ -607,46 +609,26 @@ func parseRange(raw string, size int64) (offset int64, length int64, err error) 
 	case endPart == "":
 		start, err := strconv.ParseInt(startPart, 10, 64)
 		if err != nil || start < 0 || start > size {
-			return 0, 0, fmt.Errorf("storage: invalid range %q", raw)
+			return 0, 0, rangeErr()
 		}
 		return start, size - start, nil
 	default:
 		start, err := strconv.ParseInt(startPart, 10, 64)
 		if err != nil || start < 0 {
-			return 0, 0, fmt.Errorf("storage: invalid range %q", raw)
+			return 0, 0, rangeErr()
 		}
 		end, err := strconv.ParseInt(endPart, 10, 64)
 		if err != nil || end < start {
-			return 0, 0, fmt.Errorf("storage: invalid range %q", raw)
+			return 0, 0, rangeErr()
 		}
 		if start >= size {
-			return 0, 0, fmt.Errorf("storage: invalid range %q", raw)
+			return 0, 0, rangeErr()
 		}
 		if end >= size {
 			end = size - 1
 		}
 		return start, end - start + 1, nil
 	}
-}
-
-func escapeKey(key string) string {
-	parts := strings.Split(key, "/")
-	for i, p := range parts {
-		parts[i] = url.PathEscape(p)
-	}
-	return strings.Join(parts, "/")
-}
-
-func unescapeKey(escapedPath string) (string, error) {
-	parts := strings.Split(escapedPath, "/")
-	for i, p := range parts {
-		decoded, err := url.PathUnescape(p)
-		if err != nil {
-			return "", err
-		}
-		parts[i] = decoded
-	}
-	return strings.Join(parts, "/"), nil
 }
 
 type contextReader struct {

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
@@ -53,31 +54,53 @@ func (g *DatePathKeyGenerator) inferExtension(filename, contentType string) stri
 	return ""
 }
 
-// MimeToExtension 将 MIME 类型转换为文件扩展名。
-func MimeToExtension(mimeType string) string {
-	mimeMap := map[string]string{
-		"image/jpeg":       ".jpg",
-		"image/png":        ".png",
-		"image/gif":        ".gif",
-		"image/webp":       ".webp",
-		"image/svg+xml":    ".svg",
-		"application/pdf":  ".pdf",
-		"text/plain":       ".txt",
-		"text/html":        ".html",
-		"text/css":         ".css",
-		"text/javascript":  ".js",
-		"application/json": ".json",
-		"application/xml":  ".xml",
-		"application/zip":  ".zip",
-		"video/mp4":        ".mp4",
-		"audio/mpeg":       ".mp3",
-	}
+var mimeToExt = map[string]string{
+	"image/jpeg":       ".jpg",
+	"image/png":        ".png",
+	"image/gif":        ".gif",
+	"image/webp":       ".webp",
+	"image/svg+xml":    ".svg",
+	"application/pdf":  ".pdf",
+	"text/plain":       ".txt",
+	"text/html":        ".html",
+	"text/css":         ".css",
+	"text/javascript":  ".js",
+	"application/json": ".json",
+	"application/xml":  ".xml",
+	"application/zip":  ".zip",
+	"video/mp4":        ".mp4",
+	"audio/mpeg":       ".mp3",
+}
 
-	// 处理带参数的 MIME 类型，例如 "text/plain; charset=utf-8"
-	baseMime := strings.Split(mimeType, ";")[0]
+// EscapeKey 对对象 key 进行 URL 路径编码，保留 "/" 作为目录分隔符。
+func EscapeKey(key string) string {
+	parts := strings.Split(key, "/")
+	for i, p := range parts {
+		parts[i] = url.PathEscape(p)
+	}
+	return strings.Join(parts, "/")
+}
+
+// UnescapeKey 对 URL 路径逐段解码，还原对象 key。
+func UnescapeKey(escapedPath string) (string, error) {
+	parts := strings.Split(escapedPath, "/")
+	for i, p := range parts {
+		decoded, err := url.PathUnescape(p)
+		if err != nil {
+			return "", err
+		}
+		parts[i] = decoded
+	}
+	return strings.Join(parts, "/"), nil
+}
+
+// MimeToExtension 将 MIME 类型转换为文件扩展名。
+// 支持带参数的 MIME 类型（如 "text/plain; charset=utf-8"），未知类型返回空串。
+func MimeToExtension(mimeType string) string {
+	baseMime, _, _ := strings.Cut(mimeType, ";")
 	baseMime = strings.TrimSpace(baseMime)
 
-	if ext, ok := mimeMap[baseMime]; ok {
+	if ext, ok := mimeToExt[baseMime]; ok {
 		return ext
 	}
 	return ""

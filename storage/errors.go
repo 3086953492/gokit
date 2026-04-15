@@ -14,6 +14,9 @@ var (
 	// ErrInvalidKey 表示对象 Key 不合法。
 	ErrInvalidKey = errors.New("storage: invalid object key")
 
+	// ErrInvalidRange 表示 Range 请求格式不合法。
+	ErrInvalidRange = errors.New("storage: invalid range")
+
 	// ErrBackendUnavailable 表示存储后端不可用。
 	ErrBackendUnavailable = errors.New("storage: backend unavailable")
 

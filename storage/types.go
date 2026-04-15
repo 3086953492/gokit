@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// DefaultMaxKeys 是 List 操作单次返回的默认最大对象数。
+const DefaultMaxKeys = 1000
+
 // Store 对象存储的统一后端接口。
 // 所有具体存储实现（本地文件系统、阿里云 OSS、AWS S3 等）都应实现此接口。
 type Store interface {

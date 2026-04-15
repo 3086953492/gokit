@@ -1,4 +1,4 @@
-package provider_aliyunoss
+package provideraliyunoss
 
 import (
 	"context"
@@ -83,9 +83,14 @@ func (s *Store) Upload(ctx context.Context, key string, r io.Reader, opts *stora
 		return nil, fmt.Errorf("aliyun oss upload %s: %w", key, err)
 	}
 
+	var contentType string
+	if opts != nil {
+		contentType = opts.ContentType
+	}
+
 	meta := &storage.ObjectMeta{
 		Key:         key,
-		ContentType: safeDeref(opts, func(o *storage.WriteOptions) string { return o.ContentType }),
+		ContentType: contentType,
 		URL:         s.objectURL(key),
 	}
 	if result.ETag != nil {
@@ -116,7 +121,7 @@ func (s *Store) Download(ctx context.Context, key string, opts *storage.ReadOpti
 
 	meta := &storage.ObjectMeta{
 		Key:         key,
-		Size:        safeDerefInt64(result.ContentLength),
+		Size:        result.ContentLength,
 		ContentType: safeDerefString(result.ContentType),
 		ETag:        safeDerefString(result.ETag),
 		URL:         s.objectURL(key),
@@ -175,7 +180,7 @@ func (s *Store) List(ctx context.Context, prefix string, opts *storage.ListOptio
 		objKey := safeDerefString(obj.Key)
 		meta := &storage.ObjectMeta{
 			Key:  objKey,
-			Size: safeDerefInt64(obj.Size),
+			Size: obj.Size,
 			ETag: safeDerefString(obj.ETag),
 			URL:  s.objectURL(objKey),
 		}
@@ -230,7 +235,7 @@ func (s *Store) Head(ctx context.Context, key string) (*storage.ObjectMeta, erro
 
 	meta := &storage.ObjectMeta{
 		Key:         key,
-		Size:        safeDerefInt64(result.ContentLength),
+		Size:        result.ContentLength,
 		ContentType: safeDerefString(result.ContentType),
 		ETag:        safeDerefString(result.ETag),
 		URL:         s.objectURL(key),
@@ -266,14 +271,6 @@ func isNotFoundError(err error) bool {
 	return false
 }
 
-// safeDeref 安全解引用 WriteOptions 并获取字段值。
-func safeDeref(opts *storage.WriteOptions, getter func(*storage.WriteOptions) string) string {
-	if opts == nil {
-		return ""
-	}
-	return getter(opts)
-}
-
 // safeDerefString 安全解引用 string 指针。
 func safeDerefString(p *string) string {
 	if p == nil {
@@ -282,17 +279,11 @@ func safeDerefString(p *string) string {
 	return *p
 }
 
-// safeDerefInt64 返回安全的 int64 值。
-// 当前 OSS SDK 中相关字段为非指针类型，这里预留一层封装便于未来扩展。
-func safeDerefInt64(v int64) int64 {
-	return v
-}
-
 // objectURL 生成对象的公开可访问 URL。
 // 优先使用 domain（配置的自定义域名或 CDN 域名），否则使用 bucket.endpoint 拼接。
 func (s *Store) objectURL(key string) string {
 	baseURL := s.baseURL()
-	escapedKey := escapeKey(key)
+	escapedKey := storage.EscapeKey(key)
 	return baseURL + "/" + escapedKey
 }
 
@@ -322,15 +313,6 @@ func normalizeEndpoint(endpoint string) string {
 	return strings.TrimSuffix(e, "/")
 }
 
-// escapeKey 对 key 进行 URL 编码，保留 "/" 作为目录分隔符。
-func escapeKey(key string) string {
-	parts := strings.Split(key, "/")
-	for i, p := range parts {
-		parts[i] = url.PathEscape(p)
-	}
-	return strings.Join(parts, "/")
-}
-
 // ---------------------------------------------------------------------------
 // URLKeyResolver 接口实现（可选能力，用于 Manager.DeleteByURL）
 // ---------------------------------------------------------------------------
@@ -344,9 +326,8 @@ func (s *Store) AllowedHosts() []string {
 	defaultHost := s.bucket + "." + normalizeEndpoint(s.endpoint)
 	hosts = append(hosts, defaultHost)
 
-	// 自定义域名（如配置）
 	if s.domain != "" {
-		customHost := extractHost(s.domain)
+		customHost := extractAuthority(s.domain)
 		if customHost != "" && customHost != defaultHost {
 			hosts = append(hosts, customHost)
 		}
@@ -369,7 +350,7 @@ func (s *Store) KeyFromURL(u *url.URL) (string, error) {
 	}
 
 	// 逐段解码
-	key, err := unescapeKey(path)
+	key, err := storage.UnescapeKey(path)
 	if err != nil {
 		return "", fmt.Errorf("%w: %v", storage.ErrInvalidURL, err)
 	}
@@ -381,32 +362,13 @@ func (s *Store) KeyFromURL(u *url.URL) (string, error) {
 	return key, nil
 }
 
-// extractHost 从带或不带 scheme 的域名字符串中提取 host 部分（不含端口）。
-func extractHost(domain string) string {
+// extractAuthority 从带或不带 scheme 的域名字符串中提取 authority 部分（host + 可选端口），
+// 与 url.URL.Host 的格式一致，确保 isHostAllowed 能正确匹配。
+func extractAuthority(domain string) string {
 	d := strings.TrimSpace(domain)
 	d = strings.TrimPrefix(d, "https://")
 	d = strings.TrimPrefix(d, "http://")
 	d = strings.TrimSuffix(d, "/")
-
-	// 去除端口（如有）
-	if idx := strings.LastIndex(d, ":"); idx != -1 {
-		// 确保不是 IPv6 地址中的冒号
-		if !strings.Contains(d, "[") {
-			d = d[:idx]
-		}
-	}
 	return d
 }
 
-// unescapeKey 对 URL 路径逐段解码，还原对象 key。
-func unescapeKey(escapedPath string) (string, error) {
-	parts := strings.Split(escapedPath, "/")
-	for i, p := range parts {
-		decoded, err := url.PathUnescape(p)
-		if err != nil {
-			return "", err
-		}
-		parts[i] = decoded
-	}
-	return strings.Join(parts, "/"), nil
-}

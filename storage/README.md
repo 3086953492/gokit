@@ -11,8 +11,8 @@ go get github.com/3086953492/gokit/storage
 使用具体后端时需同时引入对应子包：
 
 ```bash
-go get github.com/3086953492/gokit/storage/provider_aliyunoss
-go get github.com/3086953492/gokit/storage/provider_local
+go get github.com/3086953492/gokit/storage/provideraliyunoss
+go get github.com/3086953492/gokit/storage/providerlocal
 ```
 
 ## 核心概念
@@ -32,11 +32,11 @@ import (
 	"strings"
 
 	"github.com/3086953492/gokit/storage"
-	"github.com/3086953492/gokit/storage/provider_aliyunoss"
+	"github.com/3086953492/gokit/storage/provideraliyunoss"
 )
 
 func main() {
-	store, err := provider_aliyunoss.New(provider_aliyunoss.Config{
+	store, err := provideraliyunoss.New(provideraliyunoss.Config{
 		AccessKeyID:     "...",
 		AccessKeySecret: "...",
 		Endpoint:        "oss-cn-hangzhou.aliyuncs.com",
@@ -77,7 +77,7 @@ import (
 	"strings"
 
 	"github.com/3086953492/gokit/storage"
-	providerlocal "github.com/3086953492/gokit/storage/provider_local"
+	"github.com/3086953492/gokit/storage/providerlocal"
 )
 
 func main() {
@@ -116,7 +116,7 @@ func main() {
 
 ## 本地存储说明
 
-- **根目录**：`provider_local.Config.Root` 为必填项，所有对象都会落在该目录下。
+- **根目录**：`providerlocal.Config.Root` 为必填项，所有对象都会落在该目录下。
 - **Key 规则**：逻辑 key 使用 `/` 作为分隔符；本地实现会拒绝空 key、绝对路径、`..` 路径穿越和 `\\` 分隔符。
 - **URL 能力**：仅在配置 `BaseURL` 时生成 `ObjectMeta.URL`，并支持 `DeleteByURL`；未配置时会返回 `ErrURLDeleteUnsupported`。
 - **范围下载**：本地实现支持单段 `bytes=` 范围读取。
@@ -157,4 +157,4 @@ err := mgr.DeleteByURL(ctx, meta.URL)
 
 ## 依赖说明
 
-`provider_aliyunoss` 基于 [alibabacloud-oss-go-sdk-v2](https://github.com/aliyun/alibabacloud-oss-go-sdk-v2)。
+`provideraliyunoss` 基于 [alibabacloud-oss-go-sdk-v2](https://github.com/aliyun/alibabacloud-oss-go-sdk-v2)。

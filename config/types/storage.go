@@ -11,7 +11,7 @@ const (
 	StorageProviderLocal     = "local"
 )
 
-// LocalStorageConfig 本地文件系统存储子配置（对应 provider_local.Config）。
+// LocalStorageConfig 本地文件系统存储子配置（对应 providerlocal.Config）。
 // DirPerm、FilePerm 为 Unix 权限位十进制值（如 0o755=493）；零值表示使用 provider 默认值。
 type LocalStorageConfig struct {
 	Root     string `json:"root" yaml:"root" mapstructure:"root"`
@@ -20,7 +20,7 @@ type LocalStorageConfig struct {
 	FilePerm uint32 `json:"file_perm,omitempty" yaml:"file_perm,omitempty" mapstructure:"file_perm"`
 }
 
-// AliyunOSSConfig 阿里云 OSS 存储子配置（对应 provider_aliyunoss.Config）。
+// AliyunOSSConfig 阿里云 OSS 存储子配置（对应 provideraliyunoss.Config）。
 type AliyunOSSConfig struct {
 	AccessKeyID     string `json:"access_key_id" yaml:"access_key_id" mapstructure:"access_key_id"`
 	AccessKeySecret string `json:"access_key_secret" yaml:"access_key_secret" mapstructure:"access_key_secret"`

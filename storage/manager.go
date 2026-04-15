@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"sync"
+	"strings"
 )
 
 // Manager 对象存储管理器，作为 storage 包对外的统一入口。
-// Manager 是线程安全的，内部持有一个 Store 实现。
+// Manager 构造后只读，所有方法均可安全并发调用。
 type Manager struct {
-	mu    sync.RWMutex
 	store Store
-	opts  *Options
 }
 
 // NewManager 创建存储管理器。
@@ -30,7 +28,6 @@ func NewManager(opts ...Option) (*Manager, error) {
 
 	return &Manager{
 		store: o.store,
-		opts:  o,
 	}, nil
 }
 
@@ -46,11 +43,7 @@ func (m *Manager) Upload(ctx context.Context, key string, r io.Reader, opts ...W
 		opt(writeOpts)
 	}
 
-	m.mu.RLock()
-	store := m.store
-	m.mu.RUnlock()
-
-	meta, err := store.Upload(ctx, key, r, writeOpts)
+	meta, err := m.store.Upload(ctx, key, r, writeOpts)
 	if err != nil {
 		return nil, fmt.Errorf("storage upload %s: %w", key, err)
 	}
@@ -69,11 +62,7 @@ func (m *Manager) Download(ctx context.Context, key string, opts ...ReadOption) 
 		opt(readOpts)
 	}
 
-	m.mu.RLock()
-	store := m.store
-	m.mu.RUnlock()
-
-	rc, meta, err := store.Download(ctx, key, readOpts)
+	rc, meta, err := m.store.Download(ctx, key, readOpts)
 	if err != nil {
 		return nil, nil, fmt.Errorf("storage download %s: %w", key, err)
 	}
@@ -91,11 +80,7 @@ func (m *Manager) Delete(ctx context.Context, key string, opts ...DeleteOption) 
 		opt(deleteOpts)
 	}
 
-	m.mu.RLock()
-	store := m.store
-	m.mu.RUnlock()
-
-	if err := store.Delete(ctx, key, deleteOpts); err != nil {
+	if err := m.store.Delete(ctx, key, deleteOpts); err != nil {
 		return fmt.Errorf("storage delete %s: %w", key, err)
 	}
 	return nil
@@ -105,17 +90,13 @@ func (m *Manager) Delete(ctx context.Context, key string, opts ...DeleteOption) 
 // 返回的切片非 nil（即使为空）。
 func (m *Manager) List(ctx context.Context, prefix string, opts ...ListOption) (*ListResult, error) {
 	listOpts := &ListOptions{
-		MaxKeys: 1000, // 默认值
+		MaxKeys: DefaultMaxKeys,
 	}
 	for _, opt := range opts {
 		opt(listOpts)
 	}
 
-	m.mu.RLock()
-	store := m.store
-	m.mu.RUnlock()
-
-	result, err := store.List(ctx, prefix, listOpts)
+	result, err := m.store.List(ctx, prefix, listOpts)
 	if err != nil {
 		return nil, fmt.Errorf("storage list prefix=%s: %w", prefix, err)
 	}
@@ -137,11 +118,7 @@ func (m *Manager) Exists(ctx context.Context, key string) (bool, error) {
 		return false, err
 	}
 
-	m.mu.RLock()
-	store := m.store
-	m.mu.RUnlock()
-
-	exists, err := store.Exists(ctx, key)
+	exists, err := m.store.Exists(ctx, key)
 	if err != nil {
 		return false, fmt.Errorf("storage exists %s: %w", key, err)
 	}
@@ -154,11 +131,7 @@ func (m *Manager) Head(ctx context.Context, key string) (*ObjectMeta, error) {
 		return nil, err
 	}
 
-	m.mu.RLock()
-	store := m.store
-	m.mu.RUnlock()
-
-	meta, err := store.Head(ctx, key)
+	meta, err := m.store.Head(ctx, key)
 	if err != nil {
 		return nil, fmt.Errorf("storage head %s: %w", key, err)
 	}
@@ -168,8 +141,6 @@ func (m *Manager) Head(ctx context.Context, key string) (*ObjectMeta, error) {
 // Store 返回内部的 Store 实现。
 // 一般情况下不需要直接访问，仅供特殊场景使用。
 func (m *Manager) Store() Store {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
 	return m.store
 }
 
@@ -209,11 +180,7 @@ func (m *Manager) parseKeyFromURL(rawURL string) (string, error) {
 		return "", fmt.Errorf("%w: unsupported scheme %q", ErrInvalidURL, u.Scheme)
 	}
 
-	m.mu.RLock()
-	store := m.store
-	m.mu.RUnlock()
-
-	resolver, ok := store.(URLKeyResolver)
+	resolver, ok := m.store.(URLKeyResolver)
 	if !ok {
 		return "", ErrURLDeleteUnsupported
 	}
@@ -233,29 +200,9 @@ func (m *Manager) parseKeyFromURL(rawURL string) (string, error) {
 // isHostAllowed 检查 host 是否在允许列表中（大小写不敏感）。
 func isHostAllowed(host string, allowed []string) bool {
 	for _, h := range allowed {
-		if equalFoldHost(host, h) {
+		if strings.EqualFold(host, h) {
 			return true
 		}
 	}
 	return false
-}
-
-// equalFoldHost 大小写不敏感比较两个 host。
-func equalFoldHost(a, b string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := 0; i < len(a); i++ {
-		ca, cb := a[i], b[i]
-		if ca >= 'A' && ca <= 'Z' {
-			ca += 'a' - 'A'
-		}
-		if cb >= 'A' && cb <= 'Z' {
-			cb += 'a' - 'A'
-		}
-		if ca != cb {
-			return false
-		}
-	}
-	return true
 }
