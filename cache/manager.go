@@ -217,33 +217,6 @@ func (m *Manager) DeleteByPrefix(ctx context.Context, prefix string) error {
 	return nil
 }
 
-// DeleteByContains 删除包含指定子串的所有缓存
-func (m *Manager) DeleteByContains(ctx context.Context, substring string) error {
-	if err := m.checkClosed(); err != nil {
-		return err
-	}
-
-	// 扫描并删除 Redis 中的 key
-	keys, err := m.redis.ScanKeys(ctx, "*"+substring+"*", m.opts.ScanCount)
-	if err != nil {
-		return err
-	}
-
-	// 删除本地缓存中匹配的 key
-	if m.local != nil {
-		for _, key := range keys {
-			m.local.delete(key)
-		}
-	}
-
-	if len(keys) > 0 {
-		_, err = m.redis.Del(ctx, keys...)
-		return err
-	}
-
-	return nil
-}
-
 // DeleteByPrefixes 批量删除多个前缀的所有缓存
 func (m *Manager) DeleteByPrefixes(ctx context.Context, prefixes []string) error {
 	if len(prefixes) == 0 {
@@ -275,58 +248,6 @@ func (m *Manager) Exists(ctx context.Context, key string) (bool, error) {
 
 	// 查 Redis
 	return m.redis.Exists(ctx, key)
-}
-
-// GetKeysByPrefix 获取指定前缀的所有缓存键
-func (m *Manager) GetKeysByPrefix(ctx context.Context, prefix string) ([]string, error) {
-	if err := m.checkClosed(); err != nil {
-		return nil, err
-	}
-
-	return m.redis.ScanKeys(ctx, prefix+"*", m.opts.ScanCount)
-}
-
-// GetKeysByContains 获取包含指定子串的所有缓存键
-func (m *Manager) GetKeysByContains(ctx context.Context, substring string) ([]string, error) {
-	if err := m.checkClosed(); err != nil {
-		return nil, err
-	}
-
-	return m.redis.ScanKeys(ctx, "*"+substring+"*", m.opts.ScanCount)
-}
-
-// DeleteByConds 根据前缀和条件删除缓存
-// 使用标准化的 key 生成规则，确保能准确删除对应缓存
-func (m *Manager) DeleteByConds(ctx context.Context, prefix string, conds map[string]any) error {
-	key := BuildKeyFromConds(prefix, conds)
-	return m.Delete(ctx, key)
-}
-
-// DeleteByCondsPrefix 删除指定前缀+条件前缀的所有缓存
-// 例如：DeleteByCondsPrefix(ctx, "oauth_client", map[string]any{"id": 1})
-// 会删除所有以 "oauth_client|id=1" 开头的缓存
-func (m *Manager) DeleteByCondsPrefix(ctx context.Context, prefix string, conds map[string]any) error {
-	keyPrefix := BuildKeyFromConds(prefix, conds)
-	return m.DeleteByPrefix(ctx, keyPrefix)
-}
-
-// DeleteByContainsList 根据前缀和多组条件批量删除缓存
-// 每组条件会通过 BuildKeyFromConds 标准化为稳定的子串，然后使用 DeleteByContains 逻辑删除
-// 示例：DeleteByContainsList(ctx, "oauth_client", []map[string]any{{"id": 1}, {"id": 2}})
-func (m *Manager) DeleteByContainsList(ctx context.Context, prefix string, condsList []map[string]any) error {
-	if len(condsList) == 0 {
-		return nil
-	}
-
-	var errs []error
-	for _, conds := range condsList {
-		substring := BuildKeyFromConds(prefix, conds)
-		if err := m.DeleteByContains(ctx, substring); err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	return errors.Join(errs...)
 }
 
 // checkClosed 检查 Manager 是否已关闭
