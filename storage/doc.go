@@ -7,6 +7,5 @@
 //   - providerlocal —— 本地文件系统
 //   - provideraliyunoss —— 阿里云 OSS
 //
-// 扩展其他后端只需实现 [Store] 接口，
-// 若需支持 [Manager.DeleteByURL]，还需实现 [URLKeyResolver]。
+// 扩展其他后端只需实现 [Store] 接口。
 package storage

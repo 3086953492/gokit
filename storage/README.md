@@ -22,7 +22,6 @@ go get github.com/3086953492/gokit/storage/providerlocal
 | `Store` | 后端接口：`Upload` / `Download` / `Delete` / `List` / `Exists` / `Head` |
 | `Manager` | 对外统一入口，线程安全；校验 key、包装错误、保证 `List` 返回非 nil 切片 |
 | `ObjectMeta` | 对象元信息（含可选公开直链 `URL`） |
-| `URLKeyResolver` | 可选接口：实现后 `Manager.DeleteByURL` 可根据直链解析并删除对象 |
 
 ## 快速开始（阿里云 OSS）
 
@@ -58,6 +57,7 @@ func main() {
 	meta, err := mgr.Upload(ctx, key, strings.NewReader("hello"),
 		storage.WithContentType("text/plain; charset=utf-8"),
 	)
+	// meta.Key 为对象唯一标识，后续删除、下载均使用此 key
 	// meta.URL 为公开访问 URL（需 Bucket/权限允许匿名读）
 
 	rc, dlMeta, err := mgr.Download(ctx, key)
@@ -102,8 +102,11 @@ func main() {
 		panic(err)
 	}
 
-	_ = meta.URL // 配置 BaseURL 时才会生成公开直链
+	// 使用者应持久化 meta.Key 用于后续删除操作
+	// meta.URL 仅在配置 BaseURL 时生成，用于展示
+	_ = meta.URL
 }
+
 ```
 
 ## Manager 与选项
@@ -118,20 +121,10 @@ func main() {
 
 - **根目录**：`providerlocal.Config.Root` 为必填项，所有对象都会落在该目录下。
 - **Key 规则**：逻辑 key 使用 `/` 作为分隔符；本地实现会拒绝空 key、绝对路径、`..` 路径穿越和 `\\` 分隔符。
-- **URL 能力**：仅在配置 `BaseURL` 时生成 `ObjectMeta.URL`，并支持 `DeleteByURL`；未配置时会返回 `ErrURLDeleteUnsupported`。
+- **URL 能力**：仅在配置 `BaseURL` 时生成 `ObjectMeta.URL`。
 - **范围下载**：本地实现支持单段 `bytes=` 范围读取。
 - **权限与元数据**：可通过 `DirPerm`、`FilePerm` 控制自动创建目录和写入文件权限；`WriteOptions.UserMeta`、`CacheControl` 不会持久化到本地文件系统。
 - **列举行为**：`List` 支持 `Prefix`、`MaxKeys`、`Marker`、`Delimiter`；分页基于稳定排序后的 key / 公共前缀标记。
-
-## 按 URL 删除
-
-若 `Store` 实现了 `URLKeyResolver`（阿里云 OSS 与已配置 `BaseURL` 的本地存储均支持），可对 `ObjectMeta.URL` 形式的公开直链调用：
-
-```go
-err := mgr.DeleteByURL(ctx, meta.URL)
-```
-
-约束：仅支持 `http`/`https`；域名须在 `AllowedHosts()` 内；路径须为本库生成 URL 的格式。未实现接口时返回 `ErrURLDeleteUnsupported`。
 
 ## Key 与工具
 
@@ -145,15 +138,14 @@ err := mgr.DeleteByURL(ctx, meta.URL)
 包内预定义错误可通过 `errors.Is` 判断，例如：
 
 - `ErrNotFound`、`ErrAlreadyExists`
-- `ErrInvalidKey`、`ErrInvalidConfig`、`ErrInvalidURL`
-- `ErrDomainNotAllowed`、`ErrURLDeleteUnsupported`
+- `ErrInvalidKey`、`ErrInvalidConfig`
 - `ErrBackendUnavailable`、`ErrPermissionDenied`
 
 `Manager` 方法在包装底层错误时通常使用 `%w`，可与 `errors.Is` / `errors.As` 链式使用。
 
 ## 扩展其他后端
 
-实现 `storage.Store` 即可接入 `NewManager(storage.WithStore(...))`。若需 `DeleteByURL`，同时实现 `storage.URLKeyResolver`。
+实现 `storage.Store` 即可接入 `NewManager(storage.WithStore(...))`。
 
 ## 依赖说明
 

@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"io"
-	"net/url"
 	"time"
 )
 
@@ -80,14 +79,3 @@ type ListOptions struct {
 	Delimiter string // 目录分隔符，通常为 "/"
 }
 
-// URLKeyResolver 可选接口，由 Store 实现以支持"按 URL 删除"功能。
-// 若 Store 未实现此接口，Manager.DeleteByURL 将返回 ErrURLDeleteUnsupported。
-type URLKeyResolver interface {
-	// AllowedHosts 返回当前 Store 允许的域名列表（仅 host 部分，不含 scheme）。
-	AllowedHosts() []string
-
-	// KeyFromURL 从已解析的 URL 提取对象 key。
-	// 调用方保证 URL 的 Host 在 AllowedHosts() 范围内。
-	// 返回的 key 已做 URL 解码；若 URL 格式不符合本 Store 的生成规则，返回 ErrInvalidURL。
-	KeyFromURL(u *url.URL) (string, error)
-}

@@ -18,6 +18,8 @@ import (
 	"github.com/3086953492/gokit/storage"
 )
 
+var _ storage.Store = (*Store)(nil)
+
 // ProviderName 本地文件系统 Provider 名称。
 const ProviderName = "local"
 
@@ -30,14 +32,8 @@ const (
 type Store struct {
 	root     string
 	baseURL  string
-	baseHost string
-	basePath string
 	dirPerm  os.FileMode
 	filePerm os.FileMode
-}
-
-type urlStore struct {
-	*Store
 }
 
 type listEntry struct {
@@ -75,19 +71,15 @@ func New(cfg Config) (storage.Store, error) {
 		filePerm: defaultOrMode(cfg.FilePerm, defaultFilePerm),
 	}
 
-	if cfg.BaseURL == "" {
-		return store, nil
+	if cfg.BaseURL != "" {
+		baseURL, err := normalizeBaseURL(cfg.BaseURL)
+		if err != nil {
+			return nil, err
+		}
+		store.baseURL = baseURL
 	}
 
-	baseURL, baseHost, basePath, err := normalizeBaseURL(cfg.BaseURL)
-	if err != nil {
-		return nil, err
-	}
-	store.baseURL = baseURL
-	store.baseHost = baseHost
-	store.basePath = basePath
-
-	return &urlStore{Store: store}, nil
+	return store, nil
 }
 
 // Upload 上传对象到本地文件系统。
@@ -280,46 +272,6 @@ func (s *Store) Head(ctx context.Context, key string) (*storage.ObjectMeta, erro
 	return s.newObjectMeta(key, info, info.Size(), detectContentType(key)), nil
 }
 
-// AllowedHosts 返回当前 Store 允许的域名列表。
-func (s *urlStore) AllowedHosts() []string {
-	return []string{s.baseHost}
-}
-
-// KeyFromURL 从已解析的 URL 提取对象 key。
-func (s *urlStore) KeyFromURL(u *url.URL) (string, error) {
-	pathValue := u.Path
-	if pathValue == "" || pathValue == "/" {
-		return "", fmt.Errorf("%w: empty path", storage.ErrInvalidURL)
-	}
-
-	if s.basePath != "" {
-		if pathValue == s.basePath {
-			return "", fmt.Errorf("%w: empty key path", storage.ErrInvalidURL)
-		}
-
-		prefix := s.basePath + "/"
-		if !strings.HasPrefix(pathValue, prefix) {
-			return "", fmt.Errorf("%w: path %q", storage.ErrInvalidURL, pathValue)
-		}
-		pathValue = strings.TrimPrefix(pathValue, prefix)
-	} else {
-		pathValue = strings.TrimPrefix(pathValue, "/")
-	}
-
-	key, err := storage.UnescapeKey(pathValue)
-	if err != nil {
-		return "", fmt.Errorf("%w: %v", storage.ErrInvalidURL, err)
-	}
-	if key == "" {
-		return "", fmt.Errorf("%w: empty key after decode", storage.ErrInvalidURL)
-	}
-	if _, err := s.resolveKeyPath(key); err != nil {
-		return "", err
-	}
-
-	return key, nil
-}
-
 func (s *Store) newObjectMeta(key string, info os.FileInfo, size int64, contentType string) *storage.ObjectMeta {
 	meta := &storage.ObjectMeta{
 		Key:          key,
@@ -496,30 +448,27 @@ func normalizePrefix(prefix string) (string, error) {
 	return cleaned, nil
 }
 
-func normalizeBaseURL(raw string) (baseURL string, host string, basePath string, err error) {
+func normalizeBaseURL(raw string) (string, error) {
 	parsed, err := url.Parse(raw)
 	if err != nil {
-		return "", "", "", fmt.Errorf("%w: parse BaseURL: %v", storage.ErrInvalidConfig, err)
+		return "", fmt.Errorf("%w: parse BaseURL: %v", storage.ErrInvalidConfig, err)
 	}
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return "", "", "", fmt.Errorf("%w: BaseURL must use http or https", storage.ErrInvalidConfig)
+		return "", fmt.Errorf("%w: BaseURL must use http or https", storage.ErrInvalidConfig)
 	}
 	if parsed.Host == "" {
-		return "", "", "", fmt.Errorf("%w: BaseURL host is required", storage.ErrInvalidConfig)
+		return "", fmt.Errorf("%w: BaseURL host is required", storage.ErrInvalidConfig)
 	}
 
-	basePath = path.Clean(strings.TrimSuffix(parsed.Path, "/"))
-	if basePath == "." {
-		basePath = ""
-	}
-	if basePath == "/" {
-		basePath = ""
+	cleanedPath := path.Clean(strings.TrimSuffix(parsed.Path, "/"))
+	if cleanedPath == "." || cleanedPath == "/" {
+		cleanedPath = ""
 	}
 
-	parsed.Path = basePath
+	parsed.Path = cleanedPath
 	parsed.RawPath = ""
 
-	return strings.TrimSuffix(parsed.String(), "/"), parsed.Host, basePath, nil
+	return strings.TrimSuffix(parsed.String(), "/"), nil
 }
 
 func defaultOrMode(mode os.FileMode, fallback os.FileMode) os.FileMode {
@@ -643,6 +592,3 @@ func (r *contextReader) Read(p []byte) (int, error) {
 	return r.reader.Read(p)
 }
 
-var _ storage.Store = (*Store)(nil)
-var _ storage.Store = (*urlStore)(nil)
-var _ storage.URLKeyResolver = (*urlStore)(nil)
