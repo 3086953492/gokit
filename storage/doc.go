@@ -4,8 +4,8 @@
 // 并以 [Manager] 作为线程安全的对外入口。
 //
 // 当前内置实现：
-//   - providerlocal —— 本地文件系统
-//   - provideraliyunoss —— 阿里云 OSS
+//   - provider/local —— 本地文件系统（包名 local）
+//   - provider/aliyunoss —— 阿里云 OSS（包名 aliyunoss）
 //
 // 扩展其他后端只需实现 [Store] 接口。
 package storage

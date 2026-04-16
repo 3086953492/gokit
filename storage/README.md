@@ -11,8 +11,8 @@ go get github.com/3086953492/gokit/storage
 使用具体后端时需同时引入对应子包：
 
 ```bash
-go get github.com/3086953492/gokit/storage/provideraliyunoss
-go get github.com/3086953492/gokit/storage/providerlocal
+go get github.com/3086953492/gokit/storage/provider/aliyunoss
+go get github.com/3086953492/gokit/storage/provider/local
 ```
 
 ## 核心概念
@@ -31,11 +31,11 @@ import (
 	"strings"
 
 	"github.com/3086953492/gokit/storage"
-	"github.com/3086953492/gokit/storage/provideraliyunoss"
+	"github.com/3086953492/gokit/storage/provider/aliyunoss"
 )
 
 func main() {
-	store, err := provideraliyunoss.New(provideraliyunoss.Config{
+	store, err := aliyunoss.New(aliyunoss.Config{
 		AccessKeyID:     "...",
 		AccessKeySecret: "...",
 		Endpoint:        "oss-cn-hangzhou.aliyuncs.com",
@@ -77,11 +77,11 @@ import (
 	"strings"
 
 	"github.com/3086953492/gokit/storage"
-	"github.com/3086953492/gokit/storage/providerlocal"
+	"github.com/3086953492/gokit/storage/provider/local"
 )
 
 func main() {
-	store, err := providerlocal.New(providerlocal.Config{
+	store, err := local.New(local.Config{
 		Root:    "./data/storage",
 		BaseURL: "https://static.example.com/files", // 可选：为空时不生成 ObjectMeta.URL
 	})
@@ -119,7 +119,7 @@ func main() {
 
 ## 本地存储说明
 
-- **根目录**：`providerlocal.Config.Root` 为必填项，所有对象都会落在该目录下。
+- **根目录**：`local.Config.Root` 为必填项，所有对象都会落在该目录下。
 - **Key 规则**：逻辑 key 使用 `/` 作为分隔符；本地实现会拒绝空 key、绝对路径、`..` 路径穿越和 `\\` 分隔符。
 - **URL 能力**：仅在配置 `BaseURL` 时生成 `ObjectMeta.URL`。
 - **范围下载**：本地实现支持单段 `bytes=` 范围读取。
@@ -149,4 +149,4 @@ func main() {
 
 ## 依赖说明
 
-`provideraliyunoss` 基于 [alibabacloud-oss-go-sdk-v2](https://github.com/aliyun/alibabacloud-oss-go-sdk-v2)。
+`aliyunoss` 子包基于 [alibabacloud-oss-go-sdk-v2](https://github.com/aliyun/alibabacloud-oss-go-sdk-v2)。

@@ -1,5 +1,4 @@
-// Package providerlocal implements a local filesystem backend for storage.
-package providerlocal
+package local
 
 import "os"
 

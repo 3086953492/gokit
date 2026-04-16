@@ -1,4 +1,4 @@
-package provideraliyunoss
+package aliyunoss
 
 import (
 	"context"
@@ -12,6 +12,8 @@ import (
 
 	"github.com/3086953492/gokit/storage"
 )
+
+var _ storage.Store = (*Store)(nil)
 
 // ProviderName 阿里云 OSS 的 Provider 名称。
 const ProviderName = "aliyun_oss"
@@ -326,5 +328,3 @@ func (cr *countingReader) Read(p []byte) (int, error) {
 	cr.n += int64(n)
 	return n, err
 }
-
-

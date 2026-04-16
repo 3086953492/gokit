@@ -1,4 +1,4 @@
-package providerlocal
+package local
 
 import (
 	"context"
@@ -591,4 +591,3 @@ func (r *contextReader) Read(p []byte) (int, error) {
 	}
 	return r.reader.Read(p)
 }
-

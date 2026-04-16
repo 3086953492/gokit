@@ -1,4 +1,4 @@
-package provideraliyunoss
+package aliyunoss
 
 // Config 阿里云 OSS 配置。
 type Config struct {
