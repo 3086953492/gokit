@@ -56,10 +56,12 @@ func New(cfg Config) (storage.Store, error) {
 
 // Upload 上传对象到阿里云 OSS。
 func (s *Store) Upload(ctx context.Context, key string, r io.Reader, opts *storage.WriteOptions) (*storage.ObjectMeta, error) {
+	cr := &countingReader{r: r}
+
 	putReq := &oss.PutObjectRequest{
 		Bucket: oss.Ptr(s.bucket),
 		Key:    oss.Ptr(key),
-		Body:   r,
+		Body:   cr,
 	}
 
 	if opts != nil {
@@ -89,6 +91,7 @@ func (s *Store) Upload(ctx context.Context, key string, r io.Reader, opts *stora
 
 	meta := &storage.ObjectMeta{
 		Key:         key,
+		Size:        cr.n,
 		ContentType: contentType,
 		URL:         s.objectURL(key),
 	}
@@ -310,6 +313,18 @@ func normalizeEndpoint(endpoint string) string {
 	e = strings.TrimPrefix(e, "https://")
 	e = strings.TrimPrefix(e, "http://")
 	return strings.TrimSuffix(e, "/")
+}
+
+// countingReader 包装 io.Reader，统计实际读取的字节数。
+type countingReader struct {
+	r io.Reader
+	n int64
+}
+
+func (cr *countingReader) Read(p []byte) (int, error) {
+	n, err := cr.r.Read(p)
+	cr.n += int64(n)
+	return n, err
 }
 
 
