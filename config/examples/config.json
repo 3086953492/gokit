@@ -31,15 +31,7 @@
     "issuer": "example.com"
   },
   "log": {
-    "level": "info",
-    "filename": "logs/example.log",
-    "max_size": 10,
-    "max_backups": 3,
-    "max_age": 7,
-    "compress": true,
-    "rotate_daily": true,
-    "console": true,
-    "logs_dir": "logs"
+    "level": "info"
   },
   "middleware": {
     "auth": {

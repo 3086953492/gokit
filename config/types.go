@@ -17,9 +17,6 @@ type Config struct {
 
 // Validate 验证配置，调用子配置的 Validate 方法
 func (c *Config) Validate() error {
-	if err := c.Log.Validate(); err != nil {
-		return err
-	}
 	if err := c.Storage.Validate(); err != nil {
 		return err
 	}
@@ -43,6 +40,5 @@ func DefaultConfig() Config {
 			Port: 6379,
 			DB:   0,
 		},
-		Log: types.DefaultConfig(),
 	}
 }
